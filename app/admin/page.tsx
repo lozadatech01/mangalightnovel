@@ -1,7 +1,6 @@
-import { signOut } from "@/app/actions/auth";
 import { requireAdmin } from "@/lib/auth/authorization";
-
-export default async function AdminPage() {
-  const user = await requireAdmin();
-  return (<div className="mn-admin"><header><strong className="mn-logo">LOXADA / INK</strong><form action={signOut}><button type="submit" className="mn-exit">CLOSE SESSION ↗</button></form></header><section><span className="mn-label">CHAPTER 002 / ADMIN ACCESS CONFIRMED</span><h1>The editorial<br/>desk.</h1><div className="mn-box"><strong>Welcome, editor.</strong><p>Authorized as Manga & Light Novel administrator. Signed in as {user.email}.</p><p>This workspace is reserved for future editorial and publishing tools.</p></div></section></div>);
+import { signOut } from "@/app/actions/auth";
+export default async function AdminPage(){
+ const user=await requireAdmin();
+ return <main className="mn-book"><aside className="mn-spine">LOXADA INK <span>VOL.02</span></aside><div className="mn-pages"><header className="mn-mast"><small>EDITORIAL WORKSPACE</small><b>LOXADA<span>.</span>INK</b><small>ISSUE 002</small></header><div className="mn-desk"><small>CHAPTER 02 / STAFF APPROVED</small><h1>HELLO,<br/><em>EDITOR!</em></h1><p>{user.email} · Manga & Light Novel administrator</p><div className="mn-panels"><article><span>PANEL 01 / CONTENT</span><h2>THE<br/>MANUSCRIPT<br/>ROOM.</h2><p>Editorial features are coming later.</p></article><article><span>PANEL 02 / PARTNERS</span><h2>PEOPLE<br/>BEHIND<br/>PAGES.</h2><p>Author and publisher workflows will be added.</p></article><article><span>PANEL 03 / ACCESS</span><h2>VERIFIED ✓</h2><p>Identity and staff role were checked before opening this desk.</p></article></div><form action={signOut}><button className="mn-exit" type="submit">CLOSE ISSUE / SIGN OUT ↗</button></form></div><footer className="mn-foot">EDITORIAL / PRIVATE WORKSPACE <span>PAGE 02</span></footer></div></main>;
 }
