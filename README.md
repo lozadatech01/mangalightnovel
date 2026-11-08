@@ -28,3 +28,10 @@ The migration was applied to this department's Supabase project on 2026-11-07.
 ## Run and check
 Use `npm install`, `npm run lint`, `npm run build`, and test email confirmation, login routing, supplier review and invitation acceptance with real test addresses.
 There are no placeholder subscriber payments, retail orders, or manuscript publications.
+
+## Department account management
+The department administrator uses /admin/accounts to search and filter customer and supplier accounts, open an individual account, edit its display name, suspend/reactivate portal access with a reason, and request password recovery by email. Changes are audited in portal_account_audit.
+- Customer and supplier identities are department-local. Staff roles remain separate, server-provisioned and never editable through account management.
+- Suspended users cannot open the department portal or submit or read supplier applications through the Data API. Supplier decisions are preserved by suspension.
+- Recovery emails require configured Supabase Auth email delivery and permitted redirects to /set-password. Administrators never see user passwords.
+- SUPABASE_SECRET_KEY stays server-only.
