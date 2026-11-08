@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./portal-styles.css";
 import "./ink-ui.css";
+import "./admin/workspace.css";
 export const metadata:Metadata={
  title:"Loxada | Manga & Light Novel",
  description:"Manga & Light Novel department account portal",
