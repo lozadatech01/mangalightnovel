@@ -35,3 +35,11 @@ The department administrator uses /admin/accounts to search and filter customer 
 - Suspended users cannot open the department portal or submit or read supplier applications through the Data API. Supplier decisions are preserved by suspension.
 - Recovery emails require configured Supabase Auth email delivery and permitted redirects to /set-password. Administrators never see user passwords.
 - SUPABASE_SECRET_KEY stays server-only.
+
+## Account interface and terminology (V1)
+- UX identity: editorial paper-and-ink account register, author/publisher review desk, and reading account.
+- Use **Reader**, **Independent author**, and **Publisher**. These are department-local account types.
+- Readers access free authorized Manga/Light Novel releases once the reading features are available; do not describe it as a paid-book subscription.
+- Authors self-register and complete a separate application inside their account. Publishers join through editor/admin invitations.
+- Applicant verification is not permission to publish any manuscript, title, edition, or derivative work.
+- The account register, detail view, signup, and publishing-application portal are intentionally styled differently from Anime and Merchandise.

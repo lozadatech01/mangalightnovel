@@ -1,0 +1,85 @@
+/* INK — Editorial, reading and publishing account experience */
+.ink-directory,.ink-record{font-family:Arial,Helvetica,sans-serif;color:#29221b;max-width:1300px;margin:0 auto}
+.ink-directory h1,.ink-record h1,.ink-signup h1,.ink-portal h1{font-family:Georgia,serif;font-weight:700;letter-spacing:-.048em}
+.ink-directory h2,.ink-record h2,.ink-portal h2{font-family:Georgia,serif;font-size:23px;letter-spacing:-.035em}
+.ink-kicker,.ink-side-num{font-size:11px;letter-spacing:.16em;color:#ad4b3b;font-weight:800}
+.ink-heading{display:flex;justify-content:space-between;align-items:end;gap:25px;padding:0 0 28px;border-bottom:4px double #b6a797}
+.ink-heading h1{font-size:clamp(34px,4.5vw,56px);line-height:1.05;margin:10px 0 13px}
+.ink-heading p{margin:0;color:#766b60;font-size:14px;line-height:1.6}
+.ink-folio{white-space:nowrap;min-width:132px;border-left:2px solid #bf9b7c;padding:10px 0 10px 20px;letter-spacing:.12em;color:#7b6a5c;font-size:10px}
+.ink-folio b{display:block;font-family:Georgia,serif;font-size:28px;letter-spacing:0;color:#33271d;margin-top:8px}
+.ink-tabs{display:flex;gap:0;border-bottom:1px solid #d8c9ba;margin-bottom:28px;flex-wrap:wrap}
+.ink-tabs a{padding:15px 17px;font-size:13px;font-weight:700;color:#7d6959;border-bottom:3px solid transparent}
+.ink-tabs a[aria-current="page"]{color:#a44335;border-color:#a44335;background:#f6eee2}
+.ink-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(265px,320px);gap:25px;align-items:start}
+.ink-register{background:#fffdf7;border:1px solid #ddd0bf;padding:22px;min-width:0}
+.ink-section-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ink-section-top h2{margin:0}.ink-section-top span{font-size:12px;color:#85776a}
+.ink-filters{display:flex;gap:10px;align-items:end;margin:18px 0 13px;flex-wrap:wrap}
+.ink-directory label,.ink-record label,.ink-signup label,.ink-portal label{display:grid;gap:7px;font-size:12px;font-weight:750;color:#554b42}
+.ink-filters label:first-child{flex:2;min-width:180px}.ink-filters label:nth-child(2){flex:1;min-width:145px}
+.ink-directory input,.ink-directory select,.ink-directory textarea,.ink-record input,.ink-record textarea,.ink-signup input,.ink-signup select,.ink-portal input,.ink-portal textarea{width:100%;min-width:0;color:#2e231d;background:#fffdf9;border:1px solid #cbbb9f;border-radius:0;padding:12px;font:14px Arial,sans-serif}
+.ink-directory button,.ink-record button,.ink-signup button[type="submit"],.ink-portal button[type="submit"]{cursor:pointer;background:#ab4236;border:1px solid #ab4236;color:#fff;font:700 12px Arial,sans-serif;min-height:42px;padding:10px 15px}
+.ink-directory button:hover,.ink-record button:hover{background:#8b312b}
+.ink-directory button:focus-visible,.ink-record button:focus-visible,.ink-signup button:focus-visible,.ink-portal button:focus-visible{outline:3px solid #d79a54;outline-offset:3px}
+.ink-table-wrap{overflow:auto;max-width:100%}
+.ink-people-table{border-collapse:collapse;min-width:500px;width:100%;text-align:left;font-size:13px}
+.ink-people-table th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:#f5eddf;color:#857667;padding:11px 9px;text-align:left}
+.ink-people-table td{border-bottom:1px solid #e9dfd1;padding:17px 9px;vertical-align:middle}
+.ink-people-table td:first-child strong,.ink-people-table td:first-child small{display:block}
+.ink-people-table small{color:#8d8072;font-size:11px;margin-top:5px}
+.ink-text-link{color:#963e33;text-decoration:underline;text-underline-offset:3px;font-weight:700;font-size:12px;white-space:nowrap}
+.ink-state{display:inline-flex;font-size:11px;font-weight:750;border:1px solid;padding:5px 9px;white-space:nowrap}
+.ink-state.is-active{color:#527245;border-color:#c6d3b4;background:#f3f9ec}.ink-state.is-locked{color:#994339;border-color:#e6b8ad;background:#fff2ef}
+.ink-pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:17px;font-size:12px;color:#7d7165}
+.ink-pagination a{color:#a44335;text-decoration:underline}.ink-empty{font-size:13px;color:#807365}
+.ink-sidebar{display:grid;gap:20px}.ink-side-panel{background:#f7f0e5;border:1px solid #d5c4af;padding:22px;min-width:0}
+.ink-side-panel h2{margin:9px 0}.ink-side-panel p{font-size:13px;line-height:1.55;color:#736558}
+.ink-side-panel details>summary{cursor:pointer;padding:11px 0;font-size:13px;font-weight:750;color:#9c3c30;border-bottom:1px solid #d6c7b6}
+.ink-invite-form,.ink-review-form{display:grid;gap:13px;padding:16px 0 6px}
+.ink-invite-form label,.ink-review-form label{margin:0}.ink-invite-form button,.ink-review-form button{justify-self:start}
+.ink-request{border-top:1px solid #d9c8b7}.ink-request>summary{display:flex;justify-content:space-between;gap:12px;align-items:center;list-style:none}
+.ink-request>summary::-webkit-details-marker{display:none}.ink-request>summary span:first-child{min-width:0}
+.ink-request>summary strong,.ink-request>summary small{display:block;overflow-wrap:anywhere}.ink-request>summary small{font-size:11px;color:#796e60;margin-top:5px;font-weight:400}
+.ink-request .ink-statement{white-space:pre-wrap;background:#fffcf6;padding:12px;border-left:2px solid #b67c60;overflow-wrap:anywhere}
+.ink-message{border-left:4px solid #a54236;background:#fff4e8;padding:13px 16px;color:#5a352e;font-size:13px}
+.ink-record{padding-top:5px}.ink-record-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:25px 0;border-bottom:3px double #c8b6a0;padding-bottom:25px}
+.ink-record-head h1{margin:10px 0;font-size:clamp(35px,5vw,56px)}
+.ink-record-head p{color:#796d60;overflow-wrap:anywhere;font-size:13px}
+.ink-record-grid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:25px;align-items:start}
+.ink-record-main{display:grid;gap:18px}.ink-paper-section{border:1px solid #dac9b4;background:#fffdf7;padding:24px;min-width:0}
+.ink-paper-section h2{margin:0 0 18px}.ink-paper-section>p{font-size:13px;color:#685d50;line-height:1.6}
+.ink-facts{margin:0 0 22px;display:grid;gap:12px}.ink-facts div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #eee4d8;padding-bottom:10px}
+.ink-facts dt{color:#786e63;font-size:12px}.ink-facts dd{margin:0;font-size:12px;text-align:right;font-weight:750}
+.ink-record-form{display:grid;gap:13px}.ink-record-form button{justify-self:start}.ink-record-aside{display:grid;gap:18px}
+.ink-record-aside form{display:grid;gap:14px}.ink-record-aside textarea{resize:vertical}
+.ink-record-aside button{justify-self:start}.ink-record button:disabled{opacity:.55;cursor:not-allowed}
+.ink-confirm{display:flex!important;align-items:flex-start;gap:10px;font-size:12px!important;line-height:1.5}.ink-confirm input{width:auto!important;margin-top:2px}
+.ink-record .ink-danger{background:#8b2b24}
+.ink-history{list-style:none;margin:0;padding:0}.ink-history li{border-top:1px solid #e7dacb;padding:13px 0;font-size:12px}.ink-history small{display:block;color:#82786b;margin:5px 0}.ink-history p{color:#6b6154}
+.ink-signup{background:#eae0d0;min-height:100dvh;padding:clamp(16px,3vw,45px);display:grid;place-items:center}
+.ink-signup-shell{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1fr);width:min(100%,1000px);background:#fffcf5;border:1px solid #392e25;box-shadow:12px 12px 0 #332920}
+.ink-signup-intro{padding:clamp(24px,5vw,55px);background:#362b27;color:#f3e7d4;display:flex;flex-direction:column;justify-content:space-between;gap:40px}
+.ink-signup-intro h1{font-size:clamp(41px,6vw,75px);line-height:1.02;margin:18px 0}
+.ink-signup-intro p{line-height:1.7;color:#dbc8b1;font-size:14px}
+.ink-signup-intro .ink-kicker{color:#e9aa83}.ink-signup-note{border-top:1px solid #9a7661;padding-top:20px;font-size:12px;color:#d4b9a5;line-height:1.55}
+.ink-signup-form{padding:clamp(25px,4vw,45px)}.ink-signup-form h2{font-family:Georgia,serif;font-size:30px;margin:0 0 12px}
+.ink-signup-form p{font-size:13px;color:#6d6255;line-height:1.6}
+.ink-signup-form form{display:grid;gap:15px;margin-top:20px}.ink-signup-form .portal-field-group{display:grid;gap:13px}
+.ink-signup-form .portal-field-group small{color:#7d6b5c}.ink-signup .portal-link-button{justify-self:start;border:0;background:transparent;color:#963b32;padding:5px}
+.ink-signup-form .ink-text-link{display:inline-block;margin-top:20px}
+.ink-portal{min-height:100dvh;background:#ede4d7;color:#352a22;padding:clamp(20px,4vw,50px);font-family:Arial,sans-serif}
+.ink-portal-layout{max-width:1090px;margin:auto;background:#fffdf7;border:1px solid #d2c0a9;display:grid;grid-template-columns:230px minmax(0,1fr);min-height:560px}
+.ink-portal-aside{padding:28px 22px;background:#3a2e29;color:#f3e4ce;display:flex;flex-direction:column;gap:20px}
+.ink-portal-aside .ink-kicker{color:#e7ab86}.ink-portal-aside h2{font-size:28px;color:#f9e8d2;overflow-wrap:anywhere}
+.ink-portal-aside p{font-size:12px;color:#d7c5b1;overflow-wrap:anywhere}.ink-portal-aside form{margin-top:auto}
+.ink-portal-aside button{background:transparent!important;color:#fff!important;border:1px solid #9c8471!important}
+.ink-portal-main{padding:clamp(25px,5vw,50px);min-width:0}
+.ink-portal-main h1{font-size:clamp(32px,5vw,50px);margin:12px 0}
+.ink-portal-main>p{font-size:14px;line-height:1.6;color:#756758}
+.ink-portal-main .ink-paper-section{margin-top:25px}.ink-portal-main .ink-paper-section h2{margin-top:0}
+.ink-portal-main .ink-record-form{gap:13px}.ink-portal-main .ink-record-form input,.ink-portal-main .ink-record-form textarea{width:100%}
+.ink-portal-main .ink-confirm{margin:10px 0}.ink-subtext{color:#776759;font-size:12px;line-height:1.55}
+@media(max-width:1080px){.ink-columns{grid-template-columns:1fr}.ink-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.ink-record-grid{grid-template-columns:1fr}.ink-record-aside{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:740px){.ink-heading{align-items:start;flex-direction:column}.ink-folio{border-left:0;border-top:1px solid #bea993;padding:14px 0}.ink-sidebar,.ink-record-aside{grid-template-columns:1fr}.ink-signup-shell{grid-template-columns:1fr;box-shadow:5px 5px 0 #332920}.ink-signup-intro{gap:10px}.ink-portal-layout{grid-template-columns:1fr}.ink-portal-aside{gap:8px}}
+@media(max-width:480px){.ink-directory{padding-top:5px}.ink-register,.ink-side-panel,.ink-paper-section{padding:17px}.ink-record-head{align-items:start;flex-direction:column}.ink-filters{flex-direction:column;align-items:stretch}.ink-filters label{width:100%}.ink-tabs a{padding:12px 10px;font-size:12px}}

@@ -9,7 +9,7 @@ export default async function Login({searchParams}:{searchParams:Promise<{error?
  const error=p.error?messages[p.error]??messages.invalid:null;
  const notice=p.notice==="check-email"?"If registration was accepted, check your email for a confirmation link.":null;
 return <main className="mn-login"><section className="mn-login-sheet">
- <div className="mn-login-heading"><span>LOXADA</span><b>INK.</b></div><h1>Manga &<br/>Light Novel</h1><p className="mn-subtitle">Sign in to your account</p>
+ <div className="mn-login-heading"><span>LOXADA</span><b>INK.</b></div><h1>Manga &<br/>Light Novel</h1><p className="mn-subtitle">Readers, authors, and publishing partners</p>
  {error&&<p role="alert" className="mn-error">{error}</p>}{notice&&<p role="status">{notice}</p>}
  <form action={signIn}><label htmlFor="mn-email">Email or username</label><input id="mn-email" name="email" type="text" autoComplete="username" required/>
  <label htmlFor="mn-password">Password</label><PasswordField/><button className="mn-submit" type="submit">Sign in</button></form>
