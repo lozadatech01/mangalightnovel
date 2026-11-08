@@ -9,7 +9,7 @@ export default async function EditorialRecord({params,searchParams}:{params:Prom
  const {userId}=await params;
  const {account,authUser,history,application}=await loadAccount(userId);
  const p=await searchParams;
- const role={{reader:"Reader",creator:"Independent author",publisher:"Publisher"} as Record<string,string>}[account.account_type]??account.account_type;
+ const role=({reader:"Reader",creator:"Independent author",publisher:"Publisher"} as Record<string,string>)[account.account_type]??account.account_type;
  return <main className="ink-record">
   <Link className="ink-text-link" href="/admin/accounts">← Back to account register</Link>
   <div className="ink-record-head"><div><span className="ink-kicker">EDITORIAL / ACCOUNT RECORD</span><h1>{account.display_name}</h1><p>{role} · {authUser?.email??"Email unavailable"}</p></div>
