@@ -7,12 +7,6 @@ export const supplierTypes: readonly string[] = ["creator","publisher"];
 export const accountLabels: Record<string, string> = {
   "reader": "Reader",
   "creator": "Independent author",
-  "publisher": "Publisher",
-  "subscriber": "Subscriber",
-  "licensor": "Licensor / Distributor",
-  "prime_producer": "Prime Producer",
-  "buyer": "Buyer",
-  "wholesaler": "Wholesaler",
-  "manufacturer": "Manufacturer"
+  "publisher": "Publisher"
 };
 export function isSupplier(type: string) { return supplierTypes.includes(type); }
