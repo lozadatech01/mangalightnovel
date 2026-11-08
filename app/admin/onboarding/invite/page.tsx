@@ -21,6 +21,9 @@ export default async function InvitePartner({searchParams}:{searchParams:Promise
      <option value="" disabled>Choose a category</option>
      {invitationTypes.map(t=><option key={t} value={t}>{accountLabels[t]??t}</option>)}
     </select></label>
+    <label>Initial partnership message<textarea name="message" rows={6} minLength={40} maxLength={3000} required
+     placeholder="Introduce your department, explain the proposal, and tell the contact what you would like to discuss."/></label>
+    <p className="sr-note">This message is saved as the first private conversation message. Your Supabase invitation email template determines whether it also appears in the email.</p>
     <SubmitButton label="Send invitation" pendingLabel="Sending invitation..."/>
    </form>
   </section>

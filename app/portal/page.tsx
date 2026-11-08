@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {signOut} from "@/app/actions/auth";
 import {submitSupplierApplication} from "@/app/actions/onboarding";
 import {requirePortal} from "@/lib/auth/authorization";
@@ -21,6 +22,7 @@ export default async function InkPortal({searchParams}:{searchParams:Promise<{er
    <form action={signOut}><button type="submit">Sign out</button></form>
   </aside>
   <div className="ink-portal-main">
+   {supplier&&<Link className="sr-portal-message-link" href="/portal/messages">Messages with the editorial team</Link>}
    <span className="ink-kicker">{supplier?"PUBLISHING PARTNER DESK":"READER ACCOUNT"}</span>
    <h1>{supplier?"Your publishing application":"Your reading space"}</h1>
    <p>{supplier
