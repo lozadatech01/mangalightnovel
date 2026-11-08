@@ -33,7 +33,7 @@ export default async function EditorialRecord({params,searchParams}:{params:Prom
      <Link href="/admin/accounts" className="ink-text-link">Review applications</Link></section>}
     <section className="ink-paper-section"><h2>Record of changes</h2>
      {!history.length&&<p>No account changes recorded.</p>}
-     <ol className="ink-history">{history.map(h=><li key={h.id}><strong>{{account_suspended:"Access suspended",account_reactivated:"Access restored",display_name_changed:"Name changed",recovery_email_sent:"Password email requested"}[h.action]??h.action}</strong>
+     <ol className="ink-history">{history.map(h=><li key={h.id}><strong>{({account_suspended:"Access suspended",account_reactivated:"Access restored",display_name_changed:"Name changed",recovery_email_sent:"Password email requested"} as Record<string,string>)[String(h.action)]??String(h.action)}</strong>
       <small>{new Date(h.created_at).toLocaleString("en-PH")}</small>{h.note&&<p>{h.note}</p>}</li>)}</ol>
     </section>
    </div>
