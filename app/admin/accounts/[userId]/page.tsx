@@ -30,7 +30,7 @@ export default async function EditorialRecord({params,searchParams}:{params:Prom
      <p><strong>{application.legal_name}</strong> · {state[application.status]??application.status}</p>
      {application.reviewer_feedback&&<p>Reviewer feedback: {application.reviewer_feedback}</p>}
      <p className="ink-subtext">Verifying a partner is not the same as approving a title or giving publishing rights.</p>
-     <Link href="/admin/accounts" className="ink-text-link">Review applications</Link></section>}
+     <Link href="/admin/onboarding" className="ink-text-link">Review applications</Link></section>}
     <section className="ink-paper-section"><h2>Record of changes</h2>
      {!history.length&&<p>No account changes recorded.</p>}
      <ol className="ink-history">{history.map(h=><li key={h.id}><strong>{({account_suspended:"Access suspended",account_reactivated:"Access restored",display_name_changed:"Name changed",recovery_email_sent:"Password email requested"} as Record<string,string>)[String(h.action)]??String(h.action)}</strong>
