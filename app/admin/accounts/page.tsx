@@ -1,3 +1,4 @@
+import SubmitButton from "@/app/admin/components/submit-button";
 import Form from "next/form";
 import Link from "next/link";
 import {loadDirectory,directoryUrl} from "@/lib/admin/directory";
@@ -29,7 +30,7 @@ export default async function EditorialAccounts({searchParams}:{searchParams:Pro
      <label>Access<select name="status" defaultValue={d.status}>
       <option value="all">All accounts</option><option value="active">Can sign in</option><option value="suspended">Access suspended</option>
      </select></label>
-     <button type="submit">Find</button>
+     <SubmitButton label="Find" pendingLabel="Searching..."/>
     </Form>
     <div className="ink-table-wrap"><table className="ink-people-table">
      <thead><tr><th>Name</th><th>Account type</th><th>Access</th><th></th></tr></thead>
