@@ -74,7 +74,7 @@ export default async function EditorialAccounts({searchParams}:{searchParams:Pro
       <Link href={"/admin/accounts/"+req.user_id} className="ink-text-link">View account</Link>
       <form action={reviewSupplier} className="ink-review-form">
        <input type="hidden" name="application_id" value={req.id}/>
-       <label>Decision<select name="status" defaultValue="needs_info">{decisions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+       <label>Decision<select name="status" defaultValue="" required><option value="" disabled>Choose a decision</option>{decisions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
        <label>Message to applicant<input name="reviewer_feedback" maxLength={1000} placeholder="Required unless verified"/></label>
        <button type="submit">Save decision</button>
       </form>
