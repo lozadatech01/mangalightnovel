@@ -1,46 +1,58 @@
-import Link from "next/link";
 import {signOut} from "@/app/actions/auth";
 import {submitSupplierApplication} from "@/app/actions/onboarding";
 import {requirePortal} from "@/lib/auth/authorization";
-import {accountLabels,departmentId,departmentName,isSupplier} from "@/lib/portal/config";
-const errors:Record<string,string>={unauthorized:"This account cannot apply as a supplier.",invalid:"Check your application details and confirmation.",database:"The application could not be saved.",locked:"This application is already under review."};
-const notes:Record<string,string>={submitted:"Your application information was saved. An administrator will review it."};
-export default async function Portal({searchParams}:{searchParams:Promise<{error?:string;notice?:string}>}) {
+import {isSupplier} from "@/lib/portal/config";
+
+const statusCopy:Record<string,string>={pending:"Submitted for review",needs_info:"More information needed",verified:"Applicant verified",rejected:"Application declined",suspended:"Application suspended"};
+const errors:Record<string,string>={unauthorized:"This account cannot submit an author or publisher application.",invalid:"Please check the information and confirmation.",database:"The application could not be saved.",locked:"Your application is already being reviewed."};
+export default async function InkPortal({searchParams}:{searchParams:Promise<{error?:string;notice?:string}>}){
  const {user,account,db}=await requirePortal();
- const params=await searchParams;
+ const p=await searchParams;
  const supplier=isSupplier(account.account_type);
- const {data:application,error:appError}=supplier
-  ? await db.from("supplier_applications").select("id,status,legal_name,organization_name,contact_email,capability_statement,reviewer_feedback,updated_at").eq("user_id",user.id).maybeSingle()
+ const {data:app,error:appError}=supplier
+  ? await db.from("supplier_applications").select("status,legal_name,organization_name,contact_email,capability_statement,reviewer_feedback").eq("user_id",user.id).maybeSingle()
   : {data:null,error:null};
- const editable=supplier && (!application || application.status==="needs_info");
- return <main className="portal-screen" data-brand={departmentId}>
-  <div className="portal-card portal-wide">
-   <header className="portal-top"><span className="portal-eyebrow">LOXADA / {departmentName}</span><form action={signOut}><button className="portal-outline" type="submit">Log out</button></form></header>
-   <h1>{account.display_name}</h1>
-   <p className="portal-account-type">{accountLabels[account.account_type]??"Account"} account · {user.email}</p>
-   {params.error&&<p className="portal-alert" role="alert">{errors[params.error]??"Unable to complete request."}</p>}
-   {params.notice&&<p className="portal-notice" role="status">{notes[params.notice]??""}</p>}
-   {appError&&<p className="portal-alert">Could not load the supplier application.</p>}
+ const editable=supplier&&(!app||app.status==="needs_info");
+ const kind=account.account_type;
+ const role=kind==="creator"?"Independent author":kind==="publisher"?"Publisher":"Reader";
+ return <main className="ink-portal"><div className="ink-portal-layout">
+  <aside className="ink-portal-aside"><span className="ink-kicker">LOXADA / INK</span>
+   <div><h2>{account.display_name}</h2><p>{role}</p><p>{user.email}</p></div>
+   <form action={signOut}><button type="submit">Sign out</button></form>
+  </aside>
+  <div className="ink-portal-main">
+   <span className="ink-kicker">{supplier?"PUBLISHING PARTNER DESK":"READER ACCOUNT"}</span>
+   <h1>{supplier?"Your publishing application":"Your reading space"}</h1>
+   <p>{supplier
+    ?"Tell our editorial team about yourself or your publishing organization. Verification of an applicant is not permission to publish a title."
+    :"Your reader account is ready. Free reading will be available here when authorized titles and reading features are launched."}</p>
+   {p.error&&<p className="ink-message" role="alert">{errors[p.error]??"Unable to complete the request."}</p>}
+   {p.notice==="submitted"&&<p className="ink-message" role="status">Application sent. The editorial team will review it.</p>}
+   {appError&&<p className="ink-message" role="alert">Could not load the application.</p>}
    {!supplier
-    ? <section className="portal-section"><h2>Account ready</h2><p>Your department account is active. The {accountLabels[account.account_type]?.toLowerCase()} business features will appear here when implemented; no sample purchases, subscriptions or reading records have been created.</p></section>
-    : <section className="portal-section"><h2>Supplier application</h2>
-      <p>Application review is separate from legal rights clearance, content approval and financial authorization.</p>
-      {application&&<div className="portal-status"><strong>Status: {application.status.replaceAll("_"," ")}</strong>
-      {application.reviewer_feedback&&<p>Reviewer feedback: {application.reviewer_feedback}</p>}</div>}
-      {editable&&<form className="portal-application-form" action={submitSupplierApplication}>
-       <label htmlFor="legal-name">Legal name / authorized representative</label>
-       <input id="legal-name" name="legal_name" minLength={2} maxLength={160} defaultValue={application?.legal_name??""} required/>
-       <label htmlFor="org-name">Organization name (if applicable)</label>
-       <input id="org-name" name="organization_name" minLength={2} maxLength={160} defaultValue={application?.organization_name??""}/>
-       <label htmlFor="contact-email">Business contact email</label>
-       <input id="contact-email" name="contact_email" type="email" maxLength={254} defaultValue={application?.contact_email??user.email??""} required/>
-       <label htmlFor="capability-statement">Explain your supplier role, relevant ownership or authorization, and what you intend to supply</label>
-       <textarea id="capability-statement" name="capability_statement" minLength={20} maxLength={3000} rows={5} defaultValue={application?.capability_statement??""} required/>
-       <label className="portal-check"><input type="checkbox" name="affirmed" required/> I confirm these details are accurate and understand that evidence may be requested during review.</label>
-       <button className="portal-primary" type="submit">{application?"Save requested information":"Submit application"}</button>
-      </form>}
-     </section>}
-   <p className="portal-hint"><Link className="portal-inline-link" href="/login">Account sign-in</Link></p>
+    ? <section className="ink-paper-section"><h2>Account information</h2>
+       <dl className="ink-facts"><div><dt>Account type</dt><dd>Reader</dd></div><div><dt>Access</dt><dd>Can sign in</dd></div></dl>
+       <p className="ink-subtext">This account is for reading—not a paid book subscription or checkout.</p>
+      </section>
+    : <section className="ink-paper-section"><h2>{kind==="creator"?"Author application":"Publisher application"}</h2>
+       {app&&<p><strong>Status:</strong> {statusCopy[app.status]??app.status}</p>}
+       {app?.reviewer_feedback&&<p><strong>Editorial feedback:</strong> {app.reviewer_feedback}</p>}
+       {editable
+        ? <form className="ink-record-form" action={submitSupplierApplication}>
+           <label>{kind==="creator"?"Your legal name":"Authorized representative"}
+            <input name="legal_name" minLength={2} maxLength={160} defaultValue={app?.legal_name??""} required/></label>
+           <label>{kind==="creator"?"Organization (optional)":"Publishing company (optional)"}
+            <input name="organization_name" minLength={2} maxLength={160} defaultValue={app?.organization_name??""}/></label>
+           <label>Contact email
+            <input name="contact_email" type="email" maxLength={254} defaultValue={app?.contact_email??user.email??""} required/></label>
+           <label>{kind==="creator"?"Tell us about your writing and work":"Tell us about the catalog and rights you represent"}
+            <textarea name="capability_statement" rows={5} minLength={20} maxLength={3000} defaultValue={app?.capability_statement??""} required/></label>
+           <label className="ink-confirm"><input type="checkbox" name="affirmed" required/> I confirm these details are accurate and understand that proof of identity and rights may be requested.</label>
+           <button type="submit">{app?"Resubmit details":"Send application for review"}</button>
+          </form>
+        : <p className="ink-subtext">Your application cannot be edited while it is under review or after a final decision. Ask the editorial team if you need a change.</p>}
+       <p className="ink-subtext">Author identity, publisher verification, and permission for individual titles are separate checks.</p>
+      </section>}
   </div>
- </main>;
+ </div></main>;
 }
