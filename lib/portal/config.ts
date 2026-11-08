@@ -6,7 +6,7 @@ export const invitationTypes: readonly string[] = ["publisher"];
 export const supplierTypes: readonly string[] = ["creator","publisher"];
 export const accountLabels: Record<string, string> = {
   "reader": "Reader",
-  "creator": "Author / Creator",
+  "creator": "Independent author",
   "publisher": "Publisher",
   "subscriber": "Subscriber",
   "licensor": "Licensor / Distributor",
