@@ -11,8 +11,8 @@ export default async function EditorialAccounts({searchParams}:{searchParams:Pro
  const tabs=[["all","Everyone"],["reader","Readers"],["creator","Independent authors"],["publisher","Publishers"]];
  return <main className="ink-directory">
   <header className="ink-heading">
-   <div><span className="ink-kicker">INK / EDITORIAL DESK</span><h1>Readers &amp; publishing partners</h1>
-    <p>Find readers, independent authors, and publishers. Manage account access and password help.</p></div>
+   <div><span className="ink-kicker">INK / EDITORIAL DESK</span><h1>Account Access</h1>
+    <p>Find readers, independent authors, and publishers. Manage sign-in access and password recovery.</p></div>
    <div className="ink-folio">ACCOUNT REGISTER <b>{d.total} {d.role==="all"?"shown":"matched"}</b></div>
   </header>
   {d.error&&<p className="ink-message" role="alert">{d.error}</p>}
@@ -23,10 +23,10 @@ export default async function EditorialAccounts({searchParams}:{searchParams:Pro
   </nav>
   <div className="ink-columns ink-account-only">
    <section className="ink-register">
-    <div className="ink-section-top"><h2>Account register</h2><span>Page {d.page} of {d.pages}</span></div>
+    <div className="ink-section-top"><h2>Accounts</h2><span>Page {d.page} of {d.pages}</span></div>
     <Form className="ink-filters" action="/admin/accounts">
      <input type="hidden" name="role" value={d.role}/>
-     <label>Find a name<input name="q" type="search" defaultValue={d.q} placeholder="Search readers and partners" maxLength={60}/></label>
+     <label>Find a name<input name="q" type="search" defaultValue={d.q} placeholder="Search accounts by name" maxLength={60}/></label>
      <label>Access<select name="status" defaultValue={d.status}>
       <option value="all">All accounts</option><option value="active">Can sign in</option><option value="suspended">Access suspended</option>
      </select></label>
@@ -38,7 +38,7 @@ export default async function EditorialAccounts({searchParams}:{searchParams:Pro
       <td><strong>{person.display_name}</strong><small>Joined {new Date(person.created_at).toLocaleDateString("en-PH")}</small></td>
       <td>{{reader:"Reader",creator:"Independent author",publisher:"Publisher"}[person.account_type]??person.account_type}</td>
       <td><span className={"ink-state "+(person.status==="active"?"is-active":"is-locked")}>{person.status==="active"?"Can sign in":"Suspended"}</span></td>
-      <td><Link href={"/admin/accounts/"+person.user_id} className="ink-text-link">Open record</Link></td>
+      <td><Link href={"/admin/accounts/"+person.user_id} className="ink-text-link">Manage account</Link></td>
      </tr>)}</tbody>
     </table></div>
     {!d.people.length&&!d.error&&<p className="ink-empty">No accounts match this search.</p>}

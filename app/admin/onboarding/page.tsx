@@ -9,15 +9,15 @@ export default async function OnboardingQueue({searchParams}:{searchParams:Promi
  const d=await loadOnboarding(p);
  return <main className="ink-directory">
   <header className="ink-heading admin-work-header">
-   <div><span className="ink-kicker">MANGA & LIGHT NOVEL / ONBOARDING</span>
-    <h1>Publishing applications</h1>
-    <p>Review independent author applications and publisher partnerships. Invitations are handled separately.</p></div>
-   <Link className="ink-text-link" href="/admin/onboarding/invite">Invite a publisher</Link>
+   <div><span className="ink-kicker">MANGA & LIGHT NOVEL / APPLICATIONS</span>
+    <h1>Supplier Applications</h1>
+    <p>Review applications submitted by independent authors and publishers. Request missing information or record a verification decision.</p></div>
+   <Link className="ink-text-link" href="/admin/relations">Supplier Invitations &amp; Messages</Link>
   </header>
   {d.error&&<p className="ink-message" role="alert">{d.error}</p>}
   {p.notice&&<p className="ink-message" role="status">{notices[p.notice]??""}</p>}
   <section className="ink-register" style={{marginTop:20}}>
-   <div className="admin-work-header"><h2>Applications to review</h2><span>{d.pending} waiting for action</span></div>
+   <div className="admin-work-header"><h2>Application list</h2><span>{d.pending} waiting for action</span></div>
    <Form className="ink-filters admin-work-filter" action="/admin/onboarding">
     <label>Find an applicant<input type="search" name="q" defaultValue={d.q} placeholder="Search legal name" maxLength={60}/></label>
     <label>Review status<select name="status" defaultValue={d.status}>
@@ -26,17 +26,17 @@ export default async function OnboardingQueue({searchParams}:{searchParams:Promi
      <option value="pending">New applications</option>
      <option value="needs_info">Waiting for more details</option>
      <option value="verified">Verified applicants</option>
-     <option value="rejected">Declined</option>
+     <option value="rejected">Application declined</option>
      <option value="suspended">Suspended applications</option>
     </select></label>
-    <SubmitButton label="Apply" pendingLabel="Updating..."/>
+    <SubmitButton label="Filter applications" pendingLabel="Updating..."/>
    </Form>
    <div className="admin-work-queue">
     {d.requests.map(req=><article key={req.id} className="admin-work-request">
      <div><strong>{req.legal_name}</strong>
       <small>{req.organization_name??"Author or publisher"} · {labels[req.status]??req.status}</small>
       <small>Submitted {new Date(req.created_at).toLocaleDateString("en-PH")}</small></div>
-     <Link className="ink-text-link" href={"/admin/onboarding/"+req.id}>Open application</Link>
+     <Link className="ink-text-link" href={"/admin/onboarding/"+req.id}>Review application</Link>
     </article>)}
     {!d.requests.length&&!d.error&&<p>No applications match these filters.</p>}
    </div>
