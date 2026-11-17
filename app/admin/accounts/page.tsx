@@ -1,6 +1,7 @@
 import SubmitButton from "@/app/admin/components/submit-button";
 import Form from "next/form";
 import Link from "next/link";
+import {accountLabels} from "@/lib/portal/config";
 import {loadDirectory,directoryUrl} from "@/lib/admin/directory";
 
 const notices:Record<string,string>={invited:"Publisher invitation sent. They must accept it to create their account.",reviewed:"Application decision saved."};
@@ -15,17 +16,23 @@ export default async function EditorialAccounts({searchParams}:{searchParams:Pro
     <p>Find readers, independent authors, and publishers. Manage sign-in access and password recovery.</p></div>
    <div className="ink-folio">ACCOUNT REGISTER <b>{d.total} {d.role==="all"?"shown":"matched"}</b></div>
   </header>
+  <div className="ac-account-filter"><Link className="sr-link" href="/admin/supplier-activity/accounts">Account Analysis →</Link>
+   {d.period||d.roles.length?<><span>Cube filters: {[d.period&&("Registered "+d.period),d.roles.map(role=>accountLabels[role]??role).join(", ")].filter(Boolean).join(" · ")}</span>
+    <Link className="sr-link" href={directoryUrl({...d,period:"",roles:[]},1)}>Clear cube filters</Link></>:null}
+  </div>
   {d.error&&<p className="ink-message" role="alert">{d.error}</p>}
   {p.error&&<p className="ink-message" role="alert">{errors[p.error]??"This change could not be completed."}</p>}
   {p.notice&&<p className="ink-message" role="status">{notices[p.notice]??""}</p>}
   <nav className="ink-tabs" aria-label="Account groups">
-   {tabs.map(([key,label])=><Link key={key} href={directoryUrl({...d,role:key},1)} aria-current={d.role===key?"page":undefined}>{label}</Link>)}
+   {tabs.map(([key,label])=><Link key={key} href={directoryUrl({...d,role:key,roles:[]},1)} aria-current={d.role===key&&!d.roles.length?"page":undefined}>{label}</Link>)}
   </nav>
   <div className="ink-columns ink-account-only">
    <section className="ink-register">
     <div className="ink-section-top"><h2>Accounts</h2><span>Page {d.page} of {d.pages}</span></div>
     <Form className="ink-filters" action="/admin/accounts">
      <input type="hidden" name="role" value={d.role}/>
+     {d.roles.length?<input type="hidden" name="roles" value={d.roles.join(",")}/>:null}
+     {d.period?<input type="hidden" name="period" value={d.period}/>:null}
      <label>Find a name<input name="q" type="search" defaultValue={d.q} placeholder="Search accounts by name" maxLength={60}/></label>
      <label>Access<select name="status" defaultValue={d.status}>
       <option value="all">All accounts</option><option value="active">Can sign in</option><option value="suspended">Access suspended</option>
