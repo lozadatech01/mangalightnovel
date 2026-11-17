@@ -11,7 +11,7 @@ export default async function EditorialRecord({params,searchParams}:{params:Prom
  const p=await searchParams;
  const role=({reader:"Reader",creator:"Independent author",publisher:"Publisher"} as Record<string,string>)[account.account_type]??account.account_type;
  return <main className="ink-record">
-  <Link className="ink-text-link" href="/admin/accounts">← Back to account register</Link>
+  <Link className="ink-text-link" href="/admin/accounts">← Back to Account Access</Link>
   <div className="ink-record-head"><div><span className="ink-kicker">EDITORIAL / ACCOUNT RECORD</span><h1>{account.display_name}</h1><p>{role} · {authUser?.email??"Email unavailable"}</p></div>
    <span className={"ink-state "+(account.status==="active"?"is-active":"is-locked")}>{account.status==="active"?"Can sign in":"Suspended"}</span></div>
   {p.notice&&<p className="ink-message" role="status">{notices[p.notice]??""}</p>}
@@ -26,11 +26,11 @@ export default async function EditorialRecord({params,searchParams}:{params:Prom
      <form action={renameAccount} className="ink-record-form"><input type="hidden" name="user_id" value={userId}/>
       <label>Display name<input name="display_name" defaultValue={account.display_name} minLength={2} maxLength={80} required/></label><button type="submit">Save name</button></form>
     </section>
-    {application&&<section className="ink-paper-section"><h2>Publishing partner application</h2>
+    {application&&<section className="ink-paper-section"><h2>Supplier application</h2>
      <p><strong>{application.legal_name}</strong> · {state[application.status]??application.status}</p>
      {application.reviewer_feedback&&<p>Reviewer feedback: {application.reviewer_feedback}</p>}
-     <p className="ink-subtext">Verifying a partner is not the same as approving a title or giving publishing rights.</p>
-     <Link href="/admin/onboarding" className="ink-text-link">Review applications</Link></section>}
+     <p className="ink-subtext">Verifying a supplier is not the same as approving a title or giving publishing rights.</p>
+     <Link href="/admin/onboarding" className="ink-text-link">Review supplier applications</Link></section>}
     <section className="ink-paper-section"><h2>Record of changes</h2>
      {!history.length&&<p>No account changes recorded.</p>}
      <ol className="ink-history">{history.map(h=><li key={h.id}><strong>{({account_suspended:"Access suspended",account_reactivated:"Access restored",display_name_changed:"Name changed",recovery_email_sent:"Password email requested"} as Record<string,string>)[String(h.action)]??String(h.action)}</strong>

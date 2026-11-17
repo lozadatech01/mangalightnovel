@@ -17,17 +17,17 @@ export default function InviteForm(){
   <form action={submit} className="admin-work-review">
     {state.error&&<div className="ink-message" role="alert">
      <p>{inviteErrors[state.error]}</p>
-     {state.relationshipId&&<Link href={"/admin/relations/"+state.relationshipId}>Open supplier relationship</Link>}
+     {state.relationshipId&&<Link href={"/admin/relations/"+state.relationshipId}>Open conversation</Link>}
     </div>}
     <label>Contact name<input name="display_name" value={name} onChange={e=>setName(e.target.value)} minLength={2} maxLength={80} required/></label>
     <label>Contact email<input name="email" type="email" value={email} onChange={e=>setEmail(e.target.value)} maxLength={254} required/></label>
-    <label>Partner category<select name="account_type" required value={category} onChange={e=>setCategory(e.target.value)}>
-     <option value="" disabled>Choose a category</option>
+    <label>Supplier type<select name="account_type" required value={category} onChange={e=>setCategory(e.target.value)}>
+     <option value="" disabled>Choose a supplier type</option>
      {invitationTypes.map(t=><option key={t} value={t}>{accountLabels[t]??t}</option>)}
     </select></label>
-    <label>Initial partnership message<textarea name="message" value={message} onChange={e=>setMessage(e.target.value)} rows={6} minLength={40} maxLength={3000} required
+    <label>Opening message<textarea name="message" value={message} onChange={e=>setMessage(e.target.value)} rows={6} minLength={40} maxLength={3000} required
      placeholder="Introduce your department, explain the proposal, and tell the contact what you would like to discuss."/></label>
-    <p className="sr-note">This message is saved as the first private conversation message. Your Supabase invitation email template determines whether it also appears in the email.</p>
+    <p className="sr-note">This starts the private conversation and is included in the email when the custom invitation template is active.</p>
     <SubmitButton label="Send invitation" pendingLabel="Sending invitation..."/>
    </form>
  );
