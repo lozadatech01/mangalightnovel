@@ -22,9 +22,9 @@ export default async function EditorialAccounts({searchParams}:{searchParams:Pro
   <header className="ink-heading">
    <div><span className="ink-kicker">INK / EDITORIAL DESK</span><h1>Account Access</h1>
     <p>Find readers, independent authors, and publishers. Manage sign-in access and password recovery.</p></div>
-   <div className="ink-folio">ACCOUNT REGISTER <b>{d.total} {listFilters.length?"matched":"total"}</b></div>
+   <div className="ink-folio">ACCOUNT REGISTER <b>{d.error?"—":d.total} {d.error?"unavailable":listFilters.length?"matched":"total"}</b></div>
   </header>
-  <AccountAnalysis view={view} cells={cells} listUrl={listUrl}/>
+  <AccountAnalysis view={view} cells={cells} listUrl={listUrl} checkedAt={cells===null?null:new Date().toISOString()}/>
   <div id="account-records" tabIndex={-1}>
   {listFilters.length?<div className="ac-account-filter"><span>Account list filters: {listFilters.join(" · ")}</span>
    <Link className="sr-link" href={recordUrl({q:"",role:"all",roles:[],period:"",status:"all"},1)}>Clear list filters</Link></div>:null}
@@ -44,7 +44,7 @@ export default async function EditorialAccounts({searchParams}:{searchParams:Pro
      {d.period?<input type="hidden" name="period" value={d.period}/>:null}
      <label>Find a name<input name="q" type="search" defaultValue={d.q} placeholder="Search accounts by name" maxLength={60}/></label>
      <label>Access<select name="status" defaultValue={d.status}>
-      <option value="all">All accounts</option><option value="active">Can sign in</option><option value="suspended">Access suspended</option>
+      <option value="all">All accounts</option><option value="active">Not suspended</option><option value="suspended">Access suspended</option>
      </select></label>
      <SubmitButton label="Find" pendingLabel="Searching..."/>
     </Form>
@@ -53,7 +53,7 @@ export default async function EditorialAccounts({searchParams}:{searchParams:Pro
      <tbody>{d.people.map(person=><tr key={person.user_id}>
       <td><strong>{person.display_name}</strong><small>Joined {new Date(person.created_at).toLocaleDateString("en-PH",{timeZone:"Asia/Manila"})}</small></td>
       <td>{{reader:"Reader",creator:"Independent author",publisher:"Publisher"}[person.account_type]??person.account_type}</td>
-      <td><span className={"ink-state "+(person.status==="active"?"is-active":"is-locked")}>{person.status==="active"?"Can sign in":"Suspended"}</span></td>
+      <td><span className={"ink-state "+(person.status==="active"?"is-active":"is-locked")}>{person.status==="active"?"Not suspended":"Suspended"}</span></td>
       <td><Link href={"/admin/accounts/"+person.user_id} className="ink-text-link">Manage account</Link></td>
      </tr>)}</tbody>
     </table></div>
