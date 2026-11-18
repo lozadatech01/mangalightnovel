@@ -12,7 +12,6 @@ export default async function OnboardingQueue({searchParams}:{searchParams:Promi
    <div><span className="ink-kicker">MANGA & LIGHT NOVEL / APPLICATIONS</span>
     <h1>Supplier Applications</h1>
     <p>Review applications submitted by independent authors and publishers. Request missing information or record a verification decision.</p></div>
-   <Link className="ink-text-link" href="/admin/relations">Supplier Invitations &amp; Messages</Link>
   </header>
   {d.error&&<p className="ink-message" role="alert">{d.error}</p>}
   {p.notice&&<p className="ink-message" role="status">{notices[p.notice]??""}</p>}
