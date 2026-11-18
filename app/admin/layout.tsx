@@ -1,5 +1,4 @@
-import SectionLinks from "@/app/admin/components/section-links";
-import Link from "next/link";
+import SectionLinks, { SupplierTabs } from "@/app/admin/components/section-links";
 import { signOut } from "@/app/actions/auth";
 import { requireAdmin } from "@/lib/auth/authorization";
 export default async function EditorialLayout({children}:{children:React.ReactNode}) {
@@ -8,9 +7,9 @@ export default async function EditorialLayout({children}:{children:React.ReactNo
  return <div className="mn-workspace">
    <aside className="mn-sidebar">
      <div className="mn-logo">LOXADA <strong>INK.</strong></div>
-     <nav aria-label="Editorial navigation"><SectionLinks items={[{href:"/admin",label:"Editorial home"},{href:"/admin/accounts",label:"Account Access"},{href:"/admin/relations",label:"Supplier Invitations & Messages"},{href:"/admin/onboarding",label:"Supplier Applications"},{href:"/admin/supplier-activity",label:"Supplier Activity"}]}/></nav>
+     <nav aria-label="Editorial navigation"><SectionLinks homeLabel="Editorial home"/></nav>
      <section className="mn-profile"><div className="mn-profile-label">Account</div><b title={user.email}>{username}</b><small>Department Admin</small><form action={signOut}><button type="submit">Log out ↗</button></form></section>
    </aside>
-   <div className="mn-workspace-content">{children}</div>
+   <div className="mn-workspace-content"><SupplierTabs/>{children}</div>
  </div>;
 }
