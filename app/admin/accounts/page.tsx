@@ -1,71 +1,128 @@
-import SubmitButton from "@/app/admin/components/submit-button";
 import Form from "next/form";
 import Link from "next/link";
 import AccountAnalysis from "@/app/admin/components/account-analysis";
-import {accountCubeFields,accountRoute,inlineCubeUrl,parseInlineCubeView,type CubeParams} from "@/lib/admin/account-cube-model";
-import {loadAccountCube} from "@/lib/admin/account-cube";
-import {accountLabels,customerType,supplierTypes} from "@/lib/portal/config";
-import {loadDirectory,directoryUrl} from "@/lib/admin/directory";
+import SubmitButton from "@/app/admin/components/submit-button";
+import { loadAccountCube } from "@/lib/admin/account-cube";
+import { accountCubeFields, accountRoute, inlineCubeUrl, parseInlineCubeView, type CubeParams } from "@/lib/admin/account-cube-model";
+import { directoryUrl, loadDirectory } from "@/lib/admin/directory";
+import { accountLabels, customerType, departmentId, supplierTypes } from "@/lib/portal/config";
+import styles from "./manage-accounts.module.css";
 
 const notices:Record<string,string>={invited:"Publisher invitation sent. They must accept it to create their account.",reviewed:"Application decision saved."};
 const errors:Record<string,string>={invalid:"Review the entered details.",configuration:"Invitations are not configured.",invite:"Invitation could not be sent.",profile:"Invitation sent, but account setup needs attention.",database:"Could not save the decision.",protected:"Staff accounts are managed separately.",missing:"Account not found."};
-export default async function EditorialAccounts({searchParams}:{searchParams:Promise<CubeParams>}){
- const params=await searchParams;
- const p=Object.fromEntries(Object.entries(params).filter((entry):entry is [string,string]=>typeof entry[1]==="string"));
- const view=parseInlineCubeView(params,[customerType,...supplierTypes]);
- const [d,cells]=await Promise.all([loadDirectory(p),loadAccountCube()]);
- const recordUrl=(data:Parameters<typeof directoryUrl>[0],page:number)=>inlineCubeUrl(view,directoryUrl(data,page),"account-records");
- const listUrl=directoryUrl(d,d.page);
- const listFilters=[d.q&&("Name: "+d.q),d.role!=="all"?(accountLabels[d.role]??d.role):d.roles.map(role=>accountLabels[role]??role).join(", "),d.period&&("Registered "+d.period),d.status==="active"?"Not suspended":d.status==="suspended"?"Suspended":""].filter(Boolean);
- const tabs=[["all","Everyone"],["reader","Readers"],["creator","Independent authors"],["publisher","Publishers"]];
- return <main className="ink-directory">
-  <header className="ink-heading">
-   <div><span className="ink-kicker">INK / EDITORIAL DESK</span><h1>Account Access</h1>
-    <p>Find readers, independent authors, and publishers. Manage sign-in access and password recovery.</p></div>
-   <div className="ink-folio">ACCOUNT REGISTER <b>{d.error?"—":d.total} {d.error?"unavailable":listFilters.length?"matched":"total"}</b></div>
-  </header>
-  <AccountAnalysis view={view} cells={cells} listUrl={listUrl} checkedAt={cells===null?null:new Date().toISOString()}/>
-  <div id="account-records" tabIndex={-1}>
-  {listFilters.length?<div className="ac-account-filter"><span>Account list filters: {listFilters.join(" · ")}</span>
-   <Link className="sr-link" href={recordUrl({q:"",role:"all",roles:[],period:"",status:"all"},1)}>Clear list filters</Link></div>:null}
-  {d.error&&<p className="ink-message" role="alert">{d.error}</p>}
-  {p.error&&<p className="ink-message" role="alert">{errors[p.error]??"This change could not be completed."}</p>}
-  {p.notice&&<p className="ink-message" role="status">{notices[p.notice]??""}</p>}
-  <nav className="ink-tabs" aria-label="Account groups">
-   {tabs.map(([key,label])=><Link key={key} href={recordUrl({...d,role:key,roles:[]},1)} aria-current={d.role===key&&!d.roles.length?"page":undefined}>{label}</Link>)}
-  </nav>
-  <div className="ink-columns ink-account-only">
-   <section className="ink-register">
-    <div className="ink-section-top"><h2>Accounts</h2><span>Page {d.page} of {d.pages}</span></div>
-    <Form className="ink-filters" action={accountRoute+"#account-records"} key={listUrl}>
-     {Array.from(accountCubeFields(view),([name,value])=><input type="hidden" key={name} name={name} value={value}/>)}
-     <input type="hidden" name="role" value={d.role}/>
-     {d.roles.length?<input type="hidden" name="roles" value={d.roles.join(",")}/>:null}
-     {d.period?<input type="hidden" name="period" value={d.period}/>:null}
-     <label>Find a name<input name="q" type="search" defaultValue={d.q} placeholder="Search accounts by name" maxLength={60}/></label>
-     <label>Access<select name="status" defaultValue={d.status}>
-      <option value="all">All accounts</option><option value="active">Not suspended</option><option value="suspended">Access suspended</option>
-     </select></label>
-     <SubmitButton label="Find" pendingLabel="Searching..."/>
-    </Form>
-    <div className="ink-table-wrap"><table className="ink-people-table">
-     <thead><tr><th>Name</th><th>Account type</th><th>Access</th><th></th></tr></thead>
-     <tbody>{d.people.map(person=><tr key={person.user_id}>
-      <td><strong>{person.display_name}</strong><small>Joined {new Date(person.created_at).toLocaleDateString("en-PH",{timeZone:"Asia/Manila"})}</small></td>
-      <td>{{reader:"Reader",creator:"Independent author",publisher:"Publisher"}[person.account_type]??person.account_type}</td>
-      <td><span className={"ink-state "+(person.status==="active"?"is-active":"is-locked")}>{person.status==="active"?"Not suspended":"Suspended"}</span></td>
-      <td><Link href={"/admin/accounts/"+person.user_id} className="ink-text-link">Manage account</Link></td>
-     </tr>)}</tbody>
-    </table></div>
-    {!d.people.length&&!d.error&&<p className="ink-empty">No accounts match this search.</p>}
-    <div className="ink-pagination">
-     {d.page>1?<Link href={recordUrl(d,d.page-1)}>Previous page</Link>:<span/>}
-     <span>{d.page} / {d.pages}</span>
-     {d.page<d.pages?<Link href={recordUrl(d,d.page+1)}>Next page</Link>:<span/>}
-    </div>
-   </section>
-   
-  </div>
-  </div>
- </main>;
+
+const accountTypes = [customerType, ...supplierTypes];
+const listFields = ["q", "role", "roles", "period", "status", "page"];
+const dateFormat = new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeZone: "Asia/Manila" });
+const countFormat = new Intl.NumberFormat("en-PH");
+
+export default async function ManageAccounts({ searchParams }: { searchParams: Promise<CubeParams> }) {
+  const params = await searchParams;
+  const p = Object.fromEntries(Object.entries(params).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
+  const view = parseInlineCubeView(params, accountTypes);
+  const showAnalysis = p.view === "analysis";
+
+  if (showAnalysis) {
+    const listQuery = new URLSearchParams(listFields.flatMap(name => p[name] ? [[name, p[name]]] : []));
+    const listUrl = accountRoute + (listQuery.size ? "?" + listQuery.toString() : "");
+    const cells = await loadAccountCube();
+
+    return (
+      <main className={styles.workspace} data-dept={departmentId}>
+        <header className={styles.heading}>
+          <h1>Account Access</h1>
+        </header>
+        <nav className={styles.views} aria-label="Account Access views">
+          <Link href={inlineCubeUrl(view, listUrl, "account-records")}>Manage accounts</Link>
+          <Link href={inlineCubeUrl(view, listUrl)} aria-current="page">Account analysis</Link>
+        </nav>
+        <AccountAnalysis view={view} cells={cells} listUrl={listUrl} checkedAt={cells === null ? null : new Date().toISOString()} />
+      </main>
+    );
+  }
+
+  const directory = await loadDirectory(p.role === "all" ? { ...p, roles: undefined } : p);
+  const listUrl = directoryUrl(directory, directory.page);
+  const recordUrl = (page: number) => inlineCubeUrl(view, directoryUrl(directory, page), "account-records");
+  const clearUrl = inlineCubeUrl(view, accountRoute, "account-records");
+  const hasFilters = Boolean(directory.q || directory.period || directory.roles.length || directory.role !== "all" || directory.status !== "all");
+  const count = countFormat.format(directory.total);
+  const accountCount = directory.total === 1 ? "account" : "accounts";
+
+  return (
+    <main className={styles.workspace} data-dept={departmentId}>
+      <header className={styles.heading}>
+        <h1>Account Access</h1>
+      </header>
+      <nav className={styles.views} aria-label="Account Access views">
+        <Link href={recordUrl(directory.page)} aria-current="page">Manage accounts</Link>
+        <Link href={inlineCubeUrl(view, listUrl)} id="account-analysis" prefetch={false}>Account analysis</Link>
+      </nav>
+
+      <section className={styles.panel} id="account-records" tabIndex={-1} aria-labelledby="accounts-heading">
+        <h2 id="accounts-heading" className="sr-only">Manage accounts</h2>
+        <Form action={accountRoute + "#account-records"} key={listUrl} className={styles.filters}>
+          {Array.from(accountCubeFields(view), ([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
+          {directory.roles.length > 0 ? <input type="hidden" name="roles" value={directory.roles.join(",")} /> : null}
+          {directory.period ? <input type="hidden" name="period" value={directory.period} /> : null}
+          <label>Search by name
+            <input type="search" name="q" maxLength={60} defaultValue={directory.q} placeholder="Enter a name" />
+          </label>
+          <label>Account type
+            <select name="role" defaultValue={directory.roles.length ? "" : directory.role}>
+              {directory.roles.length ? <option value="">Types from report</option> : null}
+              <option value="all">All types</option>
+              {accountTypes.map(type => <option key={type} value={type}>{accountLabels[type] ?? type}</option>)}
+            </select>
+          </label>
+          <label>Access status
+            <select name="status" defaultValue={directory.status}>
+              <option value="all">Any status</option>
+              <option value="active">Not suspended</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </label>
+          <SubmitButton label="Search" pendingLabel="Searching…" />
+        </Form>
+
+        <div className={styles.resultBar}>
+          {directory.error ? <span>Account list unavailable</span> : <strong>{count} {accountCount}{hasFilters ? " found" : ""}</strong>}
+          {directory.period ? <span>Registered in {directory.period}</span> : null}
+          {directory.roles.length ? <span>{directory.roles.map(role => accountLabels[role] ?? role).join(", ")}</span> : null}
+          {hasFilters ? <Link href={clearUrl}>Clear filters</Link> : null}
+        </div>
+
+        {directory.error ? <p className={styles.empty} role="alert">{directory.error}</p> : null}
+        {p.error ? <p className={styles.empty} role="alert">{errors[p.error] ?? "The request could not be completed."}</p> : null}
+        {p.notice && notices[p.notice] ? <p className={styles.empty} role="status">{notices[p.notice]}</p> : null}
+
+        {directory.people.length > 0 ? (
+          <ul className={styles.list} aria-label="Accounts">
+            {directory.people.map(person => (
+              <li key={person.user_id} className={styles.accountRow}>
+                <div className={styles.identity}>
+                  <strong>{person.display_name}</strong>
+                  <span>{accountLabels[person.account_type] ?? person.account_type} · Joined <time dateTime={person.created_at}>{dateFormat.format(new Date(person.created_at))}</time></span>
+                </div>
+                <span className={styles.status} data-suspended={person.status === "suspended"}>
+                  {person.status === "active" ? "Not suspended" : "Suspended"}
+                </span>
+                <Link className={styles.manage} href={accountRoute + "/" + person.user_id} aria-label={"Manage account for " + person.display_name}>
+                  Manage <span aria-hidden="true">→</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : !directory.error ? <p className={styles.empty}>{hasFilters ? "No accounts match these filters." : "No accounts to show."}</p> : null}
+
+        {directory.pages > 1 ? (
+          <nav className={styles.pagination} aria-label="Account pages">
+            <span>Page {directory.page} of {directory.pages}</span>
+            {directory.page > 1 ? <Link href={recordUrl(directory.page - 1)}>Previous</Link> : null}
+            {directory.page < directory.pages ? <Link href={recordUrl(directory.page + 1)}>Next</Link> : null}
+          </nav>
+        ) : null}
+      </section>
+    </main>
+  );
 }
