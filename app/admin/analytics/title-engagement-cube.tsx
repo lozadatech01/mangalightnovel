@@ -55,93 +55,95 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
   }
 
   return (
-    <section id="engagement-cube" className="ink-register ac-inline" aria-labelledby="engagement-heading">
-      <h2 id="engagement-heading">Title Engagement</h2>
-      <p>Analyze eligible signed-in reading by Manila start date, content type, title, or verified publisher.</p>
-      <Form action="/admin/analytics#engagement-cube" className="ac-form" key={engagementUrl(view)}>
-        <input type="hidden" name="report" value="title-engagement" />
-        {view.pivot ? <input type="hidden" name="pivot" value="yes" /> : null}
-        <div className="ac-fields">
-          <label>Start year
-            <select name="year" defaultValue={view.year}>{years.map(year => <option key={year}>{year}</option>)}</select>
-          </label>
-          <label>Start month
-            <select name="month" defaultValue={view.month ?? ""}>
-              <option value="">All months</option>
-              {Array.from({ length: 12 }, (_, index) => index + 1).map(month => (
-                <option key={month} value={month}>{monthLabel.format(new Date(Date.UTC(2020, month - 1, 1)))}</option>
-              ))}
-            </select>
-          </label>
-          <label>Content type
-            <select name="kind" defaultValue={view.kind ?? ""}>
-              <option value="">All content types</option>
-              {Object.entries(kindLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-            </select>
-          </label>
-          {report.publishers.length || view.publisher ? <label>Publisher
-            <select name="publisher" defaultValue={view.publisher ?? ""}>
-              <option value="">All sources</option>
-              {view.publisher && !report.publishers.some(publisher => publisher.id === view.publisher)
-                ? <option value={view.publisher}>Publisher unavailable</option> : null}
-              {report.publishers.map(publisher => <option key={publisher.id} value={publisher.id}>{publisher.label}</option>)}
-            </select>
-          </label> : null}
-          <label>Group dates by
-            <select name="groupDates" defaultValue={view.level}>
-              {timeLevels.map(level => <option key={level} value={level}>{level[0].toUpperCase() + level.slice(1)}</option>)}
-            </select>
-          </label>
-          <label>Breakdown
-            <select name="breakdown" defaultValue={view.breakdown}>
-              {Object.entries(breakdownLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-            </select>
-          </label>
-          <label>Measure
-            <select name="measure" defaultValue={view.measure}>
-              {Object.entries(measureLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-            </select>
-          </label>
+    <section id="engagement-cube" className="sr-shell ac-inline" aria-labelledby="engagement-heading">
+      <div className="sr-card ac-panel">
+        <h2 id="engagement-heading">Title Engagement</h2>
+        <p>Analyze eligible signed-in reading by Manila start date, content type, title, or verified publisher.</p>
+        <Form action="/admin/analytics#engagement-cube" className="ac-form" key={engagementUrl(view)}>
+          <input type="hidden" name="report" value="title-engagement" />
+          {view.pivot ? <input type="hidden" name="pivot" value="yes" /> : null}
+          <div className="ac-fields">
+            <label>Start year
+              <select name="year" defaultValue={view.year}>{years.map(year => <option key={year}>{year}</option>)}</select>
+            </label>
+            <label>Start month
+              <select name="month" defaultValue={view.month ?? ""}>
+                <option value="">All months</option>
+                {Array.from({ length: 12 }, (_, index) => index + 1).map(month => (
+                  <option key={month} value={month}>{monthLabel.format(new Date(Date.UTC(2020, month - 1, 1)))}</option>
+                ))}
+              </select>
+            </label>
+            <label>Content type
+              <select name="kind" defaultValue={view.kind ?? ""}>
+                <option value="">All content types</option>
+                {Object.entries(kindLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              </select>
+            </label>
+            {report.publishers.length || view.publisher ? <label>Publisher
+              <select name="publisher" defaultValue={view.publisher ?? ""}>
+                <option value="">All sources</option>
+                {view.publisher && !report.publishers.some(publisher => publisher.id === view.publisher)
+                  ? <option value={view.publisher}>Publisher unavailable</option> : null}
+                {report.publishers.map(publisher => <option key={publisher.id} value={publisher.id}>{publisher.label}</option>)}
+              </select>
+            </label> : null}
+            <label>Group dates by
+              <select name="groupDates" defaultValue={view.level}>
+                {timeLevels.map(level => <option key={level} value={level}>{level[0].toUpperCase() + level.slice(1)}</option>)}
+              </select>
+            </label>
+            <label>Breakdown
+              <select name="breakdown" defaultValue={view.breakdown}>
+                {Object.entries(breakdownLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              </select>
+            </label>
+            <label>Measure
+              <select name="measure" defaultValue={view.measure}>
+                {Object.entries(measureLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="ac-report-actions"><SubmitButton label="Apply filters" pendingLabel="Updating report…" /></div>
+        </Form>
+        <div className="ac-drills" role="group" aria-label="Cube layout">
+          {up ? <Link className="ac-control" href={up} prefetch={false}>Drill up</Link> : null}
+          {down ? <Link className="ac-control" href={down} prefetch={false}>Drill down</Link> : null}
+          <Link className="ac-control" href={engagementUrl({ ...view, pivot: !view.pivot })} prefetch={false}>Pivot rows and columns</Link>
         </div>
-        <div className="ac-report-actions"><SubmitButton label="Apply filters" pendingLabel="Updating report…" /></div>
-      </Form>
-      <div className="ac-drills" role="group" aria-label="Cube layout">
-        {up ? <Link className="ac-control" href={up} prefetch={false}>Drill up</Link> : null}
-        {down ? <Link className="ac-control" href={down} prefetch={false}>Drill down</Link> : null}
-        <Link className="ac-control" href={engagementUrl({ ...view, pivot: !view.pivot })} prefetch={false}>Pivot rows and columns</Link>
+        <p className="sr-note"><strong>{measureLabels[view.measure]}</strong> · {windowLabel} · {view.level} × {breakdownLabels[view.breakdown].toLowerCase()}</p>
+        {!sourceAvailable ? <p className="sr-alert">The report source is unavailable.</p>
+          : !hasAvailablePeriod ? <p className="sr-alert">Data unavailable. This period has no verified reading snapshot.</p>
+          : !total?.available ? <p className="sr-alert">Verified data covers {availablePeriods} of {dates.length} displayed periods. Totals require coverage for the full selection.</p> : null}
+        <div className="sa-table-wrap" tabIndex={0} role="region" aria-label="Title Engagement results">
+          <table className="sa-table ac-table" aria-label={measureLabels[view.measure]}>
+            <thead><tr>
+              <th scope="col">{view.pivot ? breakdownLabels[view.breakdown] : "Start period"}</th>
+              {columns.map(column => <th scope="col" key={column.id}>{column.label}</th>)}
+              <th scope="col">Total</th>
+            </tr></thead>
+            <tbody>{rows.map(row => <tr key={row.id}>
+              <th scope="row">{row.label}</th>
+              {columns.map(column => <td key={column.id}>{renderValue(row.id, column.id)}</td>)}
+              <td>{renderValue(row.id, null)}</td>
+            </tr>)}</tbody>
+            <tfoot><tr>
+              <th scope="row">Total</th>
+              {columns.map(column => <td key={column.id}>{renderValue(null, column.id)}</td>)}
+              <td>{renderValue(null, null)}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+        {pageCount > 1 || view.page > 1 ? <nav className="ac-drills" aria-label="Breakdown pages">
+          {view.page > 1 ? <Link className="ac-control" href={engagementUrl({ ...view, page: view.page - 1 })}>Previous</Link> : null}
+          <span>Page {view.page} of {pageCount} · Totals cover all pages</span>
+          {view.page < pageCount ? <Link className="ac-control" href={engagementUrl({ ...view, page: view.page + 1 })}>Next</Link> : null}
+        </nav> : null}
+        <p className="sr-note">Completions stay with the month the read started. Distinct-reader subtotals require retained evidence. A dash means unavailable, or not applicable for a completion rate with zero starts.</p>
+        {view.year === currentYear && (view.month === null || view.month === currentMonth)
+          ? <p className="sr-note">The current month covers eligible activity through the verified source cutoff.</p> : null}
+        {total?.available && total.oldest_cutoff ? <p className="sr-note">Oldest source cutoff in this selection · {cutoffLabel.format(new Date(total.oldest_cutoff))} PHT</p> : null}
       </div>
-      <p className="sr-note"><strong>{measureLabels[view.measure]}</strong> · {windowLabel} · {view.level} × {breakdownLabels[view.breakdown].toLowerCase()}</p>
-      {!sourceAvailable ? <p className="sr-alert">The report source is unavailable.</p>
-        : !hasAvailablePeriod ? <p className="sr-alert">Data unavailable. This period has no verified reading snapshot.</p>
-        : !total?.available ? <p className="sr-alert">Verified data covers {availablePeriods} of {dates.length} displayed periods. Totals require coverage for the full selection.</p> : null}
-      <div className="sa-table-wrap" tabIndex={0} role="region" aria-label="Title Engagement results">
-        <table className="sa-table ac-table" aria-label={measureLabels[view.measure]}>
-          <thead><tr>
-            <th scope="col">{view.pivot ? breakdownLabels[view.breakdown] : "Start period"}</th>
-            {columns.map(column => <th scope="col" key={column.id}>{column.label}</th>)}
-            <th scope="col">Total</th>
-          </tr></thead>
-          <tbody>{rows.map(row => <tr key={row.id}>
-            <th scope="row">{row.label}</th>
-            {columns.map(column => <td key={column.id}>{renderValue(row.id, column.id)}</td>)}
-            <td>{renderValue(row.id, null)}</td>
-          </tr>)}</tbody>
-          <tfoot><tr>
-            <th scope="row">Total</th>
-            {columns.map(column => <td key={column.id}>{renderValue(null, column.id)}</td>)}
-            <td>{renderValue(null, null)}</td>
-          </tr></tfoot>
-        </table>
-      </div>
-      {pageCount > 1 || view.page > 1 ? <nav className="ac-drills" aria-label="Breakdown pages">
-        {view.page > 1 ? <Link className="ac-control" href={engagementUrl({ ...view, page: view.page - 1 })}>Previous</Link> : null}
-        <span>Page {view.page} of {pageCount} · Totals cover all pages</span>
-        {view.page < pageCount ? <Link className="ac-control" href={engagementUrl({ ...view, page: view.page + 1 })}>Next</Link> : null}
-      </nav> : null}
-      <p className="sr-note">Completions stay with the month the read started. Distinct-reader subtotals require retained evidence. A dash means unavailable, or not applicable for a completion rate with zero starts.</p>
-      {view.year === currentYear && (view.month === null || view.month === currentMonth)
-        ? <p className="sr-note">The current month covers eligible activity through the verified source cutoff.</p> : null}
-      {total?.available && total.oldest_cutoff ? <p className="sr-note">Oldest source cutoff in this selection · {cutoffLabel.format(new Date(total.oldest_cutoff))} PHT</p> : null}
     </section>
   );
 }
