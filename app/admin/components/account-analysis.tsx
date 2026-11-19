@@ -2,7 +2,7 @@ import Link from "next/link";
 import AccountAnalysisForm from "./account-analysis-form";
 import SubmitButton from "./submit-button";
 import {accountLabels,customerType,departmentId,supplierTypes} from "@/lib/portal/config";
-import {accountCubeFields,accountDetailUrl,accountGroups,adminRole,accountListFields,accountRoute,axes,buildAccountMatrix,inlineCubeUrl,parseCubeView,parseReaderCubeView,readerAnalyticsRoute,manilaMonth,periodDepth,timeDrillDown,timeDrillUp,timeLevels,type AccountCell,type Axis,type CubeView} from "@/lib/admin/account-cube-model";
+import {accountDetailUrl,accountGroups,adminRole,accountListFields,accountRoute,axes,buildAccountMatrix,inlineCubeUrl,parseCubeView,parseReaderCubeView,manilaMonth,periodDepth,timeDrillDown,timeDrillUp,timeLevels,type AccountCell,type Axis,type CubeView} from "@/lib/admin/account-cube-model";
 
 const roles=[customerType,adminRole,...supplierTypes];
 const roleLabel=(role:string)=>role===adminRole?"Department admin":accountLabels[role]??role;
@@ -19,10 +19,13 @@ function memberLabel(axis:Axis,key:string){
 export default function AccountAnalysis({view,cells,listUrl=accountRoute,checkedAt,readerOnly=false}:{
  view:CubeView;cells:AccountCell[]|null;listUrl?:string;checkedAt:string|null;readerOnly?:boolean;
 }){
- const reportPath=readerOnly?readerAnalyticsRoute:accountRoute;
- const cubeHref=(next:CubeView)=>readerOnly
-  ?reportPath+"?"+accountCubeFields(next).toString()+"#account-analysis"
-  :inlineCubeUrl(next,listUrl);
+ const scopeKey=readerOnly?"readers":undefined;
+ const cubeHref=(next:CubeView)=>inlineCubeUrl(next,listUrl,"account-analysis",scopeKey);
+ const otherScopeHref=readerOnly
+  ?inlineCubeUrl({...view,group:"all"},listUrl)
+  :inlineCubeUrl(parseReaderCubeView({
+    row:view.row,timeLevel:view.timeLevel,cubePeriod:view.period,cubeFocus:view.focus,cubeStatus:view.status,
+   },customerType),listUrl,"account-analysis","readers");
  const reset=()=>readerOnly?parseReaderCubeView({},customerType):parseCubeView({},roles);
  const rowLabelForView=(axis:Axis)=>axis==="account"?(view.accountLevel==="group"?"Account group":"Account type"):axis==="time"?"By "+view.timeLevel:"Access status";
  const matrix=cells?buildAccountMatrix(cells,view,roles,customerType):null;
@@ -40,7 +43,7 @@ export default function AccountAnalysis({view,cells,listUrl=accountRoute,checked
  const countCell=(count:number,row="",col="")=>{
   const detail=count>0?accountDetailUrl(view,row,col,roles,customerType):null;
   const label=[row&&memberLabel(view.row,row),col&&memberLabel(view.col,col),formatter.format(count)+" accounts"].filter(Boolean).join(", ");
-  return detail?<Link className="sr-link" prefetch={false} href={inlineCubeUrl(view,detail,"account-records")} aria-label={label+". Open matching accounts."}>{formatter.format(count)}</Link>:formatter.format(count);
+  return detail?<Link className="sr-link" prefetch={false} href={inlineCubeUrl(view,detail,"account-records",scopeKey)} aria-label={label+". Open matching accounts."}>{formatter.format(count)}</Link>:formatter.format(count);
  };
  const rowLabel=rowLabelForView(view.row),colLabel=rowLabelForView(view.col);
  const scope=[
@@ -54,13 +57,16 @@ export default function AccountAnalysis({view,cells,listUrl=accountRoute,checked
   <div className="sr-card ac-panel">
    <div className="sr-section-heading"><div><h2 id="cube-heading">{readerOnly?"Reader accounts":"Account Analysis"}</h2>
     <p>{matrix?formatter.format(matrix.total)+(readerOnly?" current reader accounts":" current account records"):(readerOnly?"Reader account counts":"Department account counts")}</p></div>
+    <Link className="sr-link" href={otherScopeHref}>{readerOnly?"View all account types":"View reader accounts"}</Link>
    </div>
    {!cells?<p className="sr-alert" role="alert">Account counts are unavailable. Reload to try again.</p>:<>
-    <AccountAnalysisForm key={JSON.stringify(view)} action={reportPath+"#account-analysis"}>
+    <AccountAnalysisForm key={JSON.stringify(view)} action={accountRoute+"#account-analysis"}>
+     <input type="hidden" name="view" value="analysis"/>
      {readerOnly?<>
+      <input type="hidden" name="scope" value="readers"/>
       <input type="hidden" name="row" value={view.row}/>
       <input type="hidden" name="col" value={view.col}/>
-     </>:<input type="hidden" name="view" value="analysis"/>}
+     </>:null}
      <input type="hidden" name="cubeFocus" value={view.focus}/>
      {Array.from(accountListFields(listUrl),([name,value])=><input key={name} type="hidden" name={name} value={value}/>)}
      <div className="ac-fields ac-direct-controls">

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {accountDetailUrl,accountRoles,buildAccountMatrix,inlineCubeUrl,parseCubeView,parseInlineCubeView,periodBounds,adminRole,accountListFields,manilaMonth,timeDrillDown,timeDrillUp} from "../lib/admin/account-cube-model.ts";
+import {accountDetailUrl,accountRoles,buildAccountMatrix,inlineCubeUrl,parseCubeView,parseInlineCubeView,parseReaderCubeView,periodBounds,adminRole,accountListFields,manilaMonth,timeDrillDown,timeDrillUp} from "../lib/admin/account-cube-model.ts";
 import {canReviewApplication,isApplicationRevision} from "../lib/admin/application-review.ts";
 const roles=["reader","creator","publisher"],customer="reader";
 const cells=[
@@ -147,4 +147,19 @@ test("portal subtotals drill through, while staff and mixed grand totals do not"
  const mixed=parseInlineCubeView({cubePeriod:"2026"},roles);
  assert.equal(accountDetailUrl(mixed,"","",options,customer),null);
  assert.equal(accountDetailUrl(mixed,"","admins",options,customer),null);
+});
+
+test("reader account navigation retains its scope inside Account Access",()=>{
+ const view=parseReaderCubeView({row:"status",timeLevel:"month",cubePeriod:"2026",cubeFocus:"2026-Q4",cubeStatus:"active"},customer);
+ const directory="/admin/accounts?role=reader&status=active&period=2026-Q4";
+ const analysis=new URL(inlineCubeUrl(view,directory,"account-analysis","readers"),"https://example.com");
+ const records=new URL(inlineCubeUrl(view,directory,"account-records","readers"),"https://example.com");
+ assert.equal(analysis.pathname,"/admin/accounts");
+ assert.equal(analysis.searchParams.get("view"),"analysis");
+ assert.equal(analysis.searchParams.get("scope"),"readers");
+ assert.deepEqual(parseReaderCubeView(Object.fromEntries(analysis.searchParams),customer),view);
+ assert.equal(records.searchParams.has("view"),false);
+ assert.equal(records.searchParams.get("scope"),"readers");
+ assert.equal(records.searchParams.get("role"),"reader");
+ assert.equal(records.searchParams.get("period"),"2026-Q4");
 });
