@@ -21,3 +21,7 @@ The department's service-only database function supplies user and supplier aggre
 Verify with `node --test tests/account-cube.test.mjs` and compare linked counts with the filtered account list totals.
 
 [Project-wide BI and data design](https://github.com/hilocarloarmenion03/admin/tree/main/loxadawide)
+
+## Manga & Light Novel Analytics
+
+Open **Analytics** from the admin sidebar. Reader Accounts uses the existing live department aggregate, scoped to reader accounts. Slice by date range or current access status, combine them to dice, drill through year, quarter, and month levels, and pivot registration period and status. Count links open the matching reader directory. Source failures show unavailable; a successful query with no matching accounts shows zero. Title Engagement becomes available when the reader workflow supplies eligible starts and completion evidence. See the [V1.0 Title Engagement definition](https://github.com/hilocarloarmenion03/loxadaentertainmentscompany/blob/main/knowledge/specification/v1.0.md#L34168).

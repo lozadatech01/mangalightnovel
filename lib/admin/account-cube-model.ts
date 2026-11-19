@@ -9,6 +9,7 @@ export type AccountCell={account_type:string;status:AccountStatus;month:string;t
 export type CubeView={row:Axis;col:Axis;accountLevel:"group"|"type";timeLevel:TimeLevel;group:AccountGroup;roles:string[];status:AccountStatus|"";period:string;focus:string};
 export type CubeParams=Record<string,string|string[]|undefined>;
 export const accountRoute="/admin/accounts";
+export const readerAnalyticsRoute="/admin/analytics";
 export const axes=[["account","Account"],["status","Access status"],["time","Account date"]] as const;
 
 export function accountRoles(value:string|string[]|undefined,allowed:readonly string[]){
@@ -52,6 +53,15 @@ export function parseCubeView(params:CubeParams,roles:readonly string[]):CubeVie
 }
 export function parseInlineCubeView(params:CubeParams,roles:readonly string[]):CubeView{
  return parseCubeView({...params,group:params.cubeGroup,roles:params.cubeRoles,status:params.cubeStatus,period:params.cubePeriod,focus:params.cubeFocus},[...roles,adminRole]);
+}
+
+export function parseReaderCubeView(params:CubeParams,readerType:string):CubeView{
+ const layout=params.row==="status"?{row:"status",col:"time"}:{row:"time",col:"status"};
+ const status=params.cubeStatus==="active"||params.cubeStatus==="suspended"?params.cubeStatus:undefined;
+ return parseCubeView({
+  ...layout,group:"customers",status,timeLevel:params.timeLevel,
+  period:params.cubePeriod,focus:params.cubeFocus,
+ },[readerType]);
 }
 
 export function accountCubeFields(view:CubeView){

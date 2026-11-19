@@ -2,7 +2,7 @@ import Link from "next/link";
 import AccountAnalysisForm from "./account-analysis-form";
 import SubmitButton from "./submit-button";
 import {accountLabels,customerType,departmentId,supplierTypes} from "@/lib/portal/config";
-import {accountDetailUrl,accountGroups,adminRole,accountListFields,accountRoute,axes,buildAccountMatrix,inlineCubeUrl,parseCubeView,manilaMonth,periodDepth,timeDrillDown,timeDrillUp,timeLevels,type AccountCell,type Axis,type CubeView} from "@/lib/admin/account-cube-model";
+import {accountCubeFields,accountDetailUrl,accountGroups,adminRole,accountListFields,accountRoute,axes,buildAccountMatrix,inlineCubeUrl,parseCubeView,parseReaderCubeView,readerAnalyticsRoute,manilaMonth,periodDepth,timeDrillDown,timeDrillUp,timeLevels,type AccountCell,type Axis,type CubeView} from "@/lib/admin/account-cube-model";
 
 const roles=[customerType,adminRole,...supplierTypes];
 const roleLabel=(role:string)=>role===adminRole?"Department admin":accountLabels[role]??role;
@@ -16,8 +16,14 @@ function memberLabel(axis:Axis,key:string){
  return accountGroups.find(([value])=>value===key)?.[1]??roleLabel(key);
 }
 
-export default function AccountAnalysis({view,cells,listUrl,checkedAt}:{view:CubeView;cells:AccountCell[]|null;listUrl:string;checkedAt:string|null}){
- const cubeHref=(next:CubeView)=>inlineCubeUrl(next,listUrl);
+export default function AccountAnalysis({view,cells,listUrl=accountRoute,checkedAt,readerOnly=false}:{
+ view:CubeView;cells:AccountCell[]|null;listUrl?:string;checkedAt:string|null;readerOnly?:boolean;
+}){
+ const reportPath=readerOnly?readerAnalyticsRoute:accountRoute;
+ const cubeHref=(next:CubeView)=>readerOnly
+  ?reportPath+"?"+accountCubeFields(next).toString()+"#account-analysis"
+  :inlineCubeUrl(next,listUrl);
+ const reset=()=>readerOnly?parseReaderCubeView({},customerType):parseCubeView({},roles);
  const rowLabelForView=(axis:Axis)=>axis==="account"?(view.accountLevel==="group"?"Account group":"Account type"):axis==="time"?"By "+view.timeLevel:"Access status";
  const matrix=cells?buildAccountMatrix(cells,view,roles,customerType):null;
  const year=Number(manilaMonth(new Date()).slice(0,4));
@@ -38,7 +44,7 @@ export default function AccountAnalysis({view,cells,listUrl,checkedAt}:{view:Cub
  };
  const rowLabel=rowLabelForView(view.row),colLabel=rowLabelForView(view.col);
  const scope=[
-  accountGroups.find(([key])=>key===view.group)?.[1],
+  readerOnly?"Readers":accountGroups.find(([key])=>key===view.group)?.[1],
   view.period?labelTime(view.period):"All dates",
   view.status?accessLabels[view.status]:null,
   view.roles.length?view.roles.map(roleLabel).join(", "):null,
@@ -46,18 +52,21 @@ export default function AccountAnalysis({view,cells,listUrl,checkedAt}:{view:Cub
  const hasCustomLayout=view.accountLevel!=="group"||!((view.row==="time"&&view.col==="account")||(view.row==="account"&&view.col==="time"));
  return <section id="account-analysis" tabIndex={-1} className="sr-shell ac-inline" data-dept={departmentId} aria-labelledby="cube-heading">
   <div className="sr-card ac-panel">
-   <div className="sr-section-heading"><div><h2 id="cube-heading">Account Analysis</h2>
-    <p>{matrix?formatter.format(matrix.total)+" current account records":"Department account counts"}</p></div>
+   <div className="sr-section-heading"><div><h2 id="cube-heading">{readerOnly?"Reader accounts":"Account Analysis"}</h2>
+    <p>{matrix?formatter.format(matrix.total)+(readerOnly?" current reader accounts":" current account records"):(readerOnly?"Reader account counts":"Department account counts")}</p></div>
    </div>
    {!cells?<p className="sr-alert" role="alert">Account counts are unavailable. Reload to try again.</p>:<>
-    <AccountAnalysisForm key={JSON.stringify(view)} action={accountRoute+"#account-analysis"}>
-     <input type="hidden" name="view" value="analysis"/>
+    <AccountAnalysisForm key={JSON.stringify(view)} action={reportPath+"#account-analysis"}>
+     {readerOnly?<>
+      <input type="hidden" name="row" value={view.row}/>
+      <input type="hidden" name="col" value={view.col}/>
+     </>:<input type="hidden" name="view" value="analysis"/>}
      <input type="hidden" name="cubeFocus" value={view.focus}/>
      {Array.from(accountListFields(listUrl),([name,value])=><input key={name} type="hidden" name={name} value={value}/>)}
      <div className="ac-fields ac-direct-controls">
-      <label>Account group<select key={view.group} name="cubeGroup" defaultValue={view.group}>
+      {!readerOnly?<label>Account group<select key={view.group} name="cubeGroup" defaultValue={view.group}>
        {accountGroups.map(([key,label])=><option key={key} value={key}>{label}</option>)}
-      </select></label>
+      </select></label>:null}
       <label>Date range<select key={view.period} name="cubePeriod" defaultValue={view.period}>
        <option value="">All time</option><option value={year}>This year ({year})</option><option value={year-1}>Last year ({year-1})</option>
        {otherYears.length?<optgroup label="Other years">{otherYears.map(value=><option key={value} value={value}>{value}</option>)}</optgroup>:null}
@@ -68,12 +77,13 @@ export default function AccountAnalysis({view,cells,listUrl,checkedAt}:{view:Cub
        <option value="">All statuses</option>
        <option value="active">Not suspended</option>
        <option value="suspended">Suspended</option>
-       <option value="not_tracked">Not tracked (staff)</option>
+       {!readerOnly?<option value="not_tracked">Not tracked (staff)</option>:null}
       </select></label>
       <label>Group dates by<select name="timeLevel" defaultValue={view.timeLevel}>
        {timeLevels.map(([key,label])=><option key={key} value={key}>{label}</option>)}
       </select></label>
      </div>
+     {!readerOnly?<>
      <details className="ac-filter-panel" open={view.roles.length>0||undefined}>
       <summary>Filter by specific account types</summary>
       <fieldset className="ac-extra-controls">
@@ -100,6 +110,7 @@ export default function AccountAnalysis({view,cells,listUrl,checkedAt}:{view:Cub
        </select></label>
       </div>
      </details>
+     </>:null}
      <div className="ac-report-actions"><SubmitButton label="Apply report filters" pendingLabel="Updating report…"/></div>
     </AccountAnalysisForm>
     <p className="sr-note"><strong>Applied filters</strong> · {scope}{view.focus?" · Drilled into "+labelTime(view.focus):""}</p>
@@ -109,7 +120,7 @@ export default function AccountAnalysis({view,cells,listUrl,checkedAt}:{view:Cub
      {hasTime&&down?<Link className="ac-control" prefetch={false} href={cubeHref(down)}>↓ Drill down to {down.timeLevel==="quarter"?"quarters":"months"}</Link>:null}
      {view.focus?<Link className="sr-link" prefetch={false} href={cubeHref({...view,focus:""})}>Clear drill focus</Link>:null}
      <Link className="ac-control" prefetch={false} href={cubeHref({...view,row:view.col,col:view.row})}>Pivot rows and columns</Link>
-     <Link className="sr-link" prefetch={false} href={cubeHref(parseCubeView({},roles))}>Reset report</Link>
+     <Link className="sr-link" prefetch={false} href={cubeHref(reset())}>Reset report</Link>
     </nav>
     {matrix&&matrix.rows.length&&matrix.columns.length?<div className="sa-table-wrap"><table className="sa-table ac-table" aria-label={rowLabel+" by "+colLabel}>
      <thead><tr><th scope="col">{rowLabel}</th>{matrix.columns.map(col=><th key={col} scope="col">{heading(view.col,col)}</th>)}<th scope="col">Total</th></tr></thead>
@@ -119,7 +130,9 @@ export default function AccountAnalysis({view,cells,listUrl,checkedAt}:{view:Cub
      <tfoot><tr><th scope="row">Total</th>{matrix.columns.map(col=><td key={col}>{countCell(matrix.columnTotals.get(col)??0,"",col)}</td>)}<td>{countCell(matrix.total)}</td></tr></tfoot>
     </table></div>:<p className="sr-note">No accounts match this view.</p>}
     {matrix&&matrix.total===0&&matrix.rows.length>0&&matrix.columns.length>0?<p className="sr-note">No accounts match these filters.</p>:null}
-    <p className="sr-note">Current records, grouped by registration or staff role assignment date in Philippine time. Access status is current, not historical, and “Not suspended” does not guarantee sign-in. Linked totals open matching users and suppliers only. Staff counts are aggregate-only.</p>
+    <p className="sr-note">{readerOnly
+     ?"Counts current reader accounts by registration date in Philippine time. Status reflects current access. Linked totals open the matching reader accounts."
+     :"Current records, grouped by registration or staff role assignment date in Philippine time. Access status is current, not historical, and “Not suspended” does not guarantee sign-in. Linked totals open matching users and suppliers only. Staff counts are aggregate-only."}</p>
     {checkedAt?<p className="sr-note">Checked <time dateTime={checkedAt}>{new Intl.DateTimeFormat("en-PH",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Manila"}).format(new Date(checkedAt))}</time> PHT</p>:null}
    </>}
   </div>
