@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import styles from "@/app/admin/components/workspace-tabs.module.css";
 import { inlineCubeUrl, parseReaderCubeView, type CubeParams } from "@/lib/admin/account-cube-model";
 import { customerType, departmentId } from "@/lib/portal/config";
+import { engagementUrl, engagementView, engagementWindow, unavailableEngagement } from "@/lib/admin/title-engagement-model";
+import { loadTitleEngagement } from "@/lib/admin/title-engagement";
+import TitleEngagementCube from "./title-engagement-cube";
 
 export const metadata = { title: "Manga & Light Novel Analytics" };
 
@@ -10,8 +13,6 @@ const reports = [
   {
     id: "title-engagement",
     label: "Title Engagement",
-    description: "See how many signed-in readers started or finished a title during a selected period.",
-    source: "Waiting for the reader to record authorized chapter starts and completions.",
     href: "/admin/analytics",
   },
   {
@@ -32,6 +33,14 @@ export default async function MangaAnalytics({ searchParams }: { searchParams: P
   }
 
   const report = reports.find(item => item.id === params.report) ?? reports[0];
+  const now = new Date();
+  const view = engagementView(params, now);
+  const window = engagementWindow(view, now);
+  const results = report.id === "title-engagement" ? await loadTitleEngagement(view, window) : null;
+  if (results) {
+    const lastPage = Math.max(1, Math.ceil(results.memberCount / 12));
+    if (view.page > lastPage) redirect(engagementUrl({ ...view, page: lastPage }));
+  }
 
   return (
     <main className="ink-directory">
@@ -45,11 +54,16 @@ export default async function MangaAnalytics({ searchParams }: { searchParams: P
           </Link>
         ))}
       </nav>
-      <section className="ink-register" aria-labelledby="analytics-report-heading">
-        <h2 id="analytics-report-heading">{report.label}</h2>
-        <p>{report.description}</p>
-        <p className="mt-3"><strong>Data unavailable.</strong> {report.source}</p>
-      </section>
+      {report.id === "title-engagement" ? (
+        <TitleEngagementCube view={view} window={window} report={results ?? unavailableEngagement(view, window)}
+          now={now} sourceAvailable={results !== null} />
+      ) : (
+        <section className="ink-register" aria-labelledby="analytics-report-heading">
+          <h2 id="analytics-report-heading">{report.label}</h2>
+          <p>{report.description}</p>
+          <p className="mt-3"><strong>Data unavailable.</strong> {report.source}</p>
+        </section>
+      )}
     </main>
   );
 }

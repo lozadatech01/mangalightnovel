@@ -1,0 +1,17 @@
+import "server-only";
+import { requireAdmin } from "@/lib/auth/authorization";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { DateWindow, EngagementReport, EngagementView } from "./title-engagement-model";
+
+export async function loadTitleEngagement(view: EngagementView, window: DateWindow): Promise<EngagementReport | null> {
+  await requireAdmin();
+  const db = createAdminClient();
+  if (!db) return null;
+  const { data, error } = await db.rpc("manga_title_engagement_cube", {
+    p_from: window.from, p_to: window.to, p_level: view.level, p_breakdown: view.breakdown,
+    p_kind: view.kind, p_publisher: view.publisher, p_page: view.page,
+  });
+  if (error || !data || !Array.isArray(data.buckets) || !Array.isArray(data.members) ||
+      !Array.isArray(data.publishers) || !Array.isArray(data.cells) || !Number.isSafeInteger(data.memberCount)) return null;
+  return data as EngagementReport;
+}
