@@ -3,7 +3,7 @@ import Link from "next/link";
 import AccountAnalysis from "@/app/admin/components/account-analysis";
 import SubmitButton from "@/app/admin/components/submit-button";
 import { loadAccountCube } from "@/lib/admin/account-cube";
-import { accountCubeFields, accountRoute, inlineCubeUrl, parseInlineCubeView, type CubeParams } from "@/lib/admin/account-cube-model";
+import { accountCubeFields, accountRoute, inlineCubeUrl, parseInlineCubeView, parseReaderCubeView, type CubeParams } from "@/lib/admin/account-cube-model";
 import { directoryUrl, loadDirectory } from "@/lib/admin/directory";
 import { accountLabels, customerType, departmentId, supplierTypes } from "@/lib/portal/config";
 import styles from "./manage-accounts.module.css";
@@ -19,13 +19,15 @@ const countFormat = new Intl.NumberFormat("en-PH");
 export default async function ManageAccounts({ searchParams }: { searchParams: Promise<CubeParams> }) {
   const params = await searchParams;
   const p = Object.fromEntries(Object.entries(params).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
-  const view = parseInlineCubeView(params, accountTypes);
+  const readerOnly = p.scope === "readers";
+  const scope = readerOnly ? "readers" : undefined;
+  const view = readerOnly ? parseReaderCubeView(params, customerType) : parseInlineCubeView(params, accountTypes);
   const showAnalysis = p.view === "analysis";
 
   if (showAnalysis) {
     const listQuery = new URLSearchParams(listFields.flatMap(name => p[name] ? [[name, p[name]]] : []));
     const listUrl = accountRoute + (listQuery.size ? "?" + listQuery.toString() : "");
-    const cells = await loadAccountCube();
+    const cells = await loadAccountCube(readerOnly ? "readers" : "all");
 
     return (
       <main className={styles.workspace} data-dept={departmentId}>
@@ -33,18 +35,18 @@ export default async function ManageAccounts({ searchParams }: { searchParams: P
           <h1>Account Access</h1>
         </header>
         <nav className={styles.views} aria-label="Account Access views">
-          <Link href={inlineCubeUrl(view, listUrl, "account-records")}>Manage accounts</Link>
-          <Link href={inlineCubeUrl(view, listUrl)} aria-current="page">Account analysis</Link>
+          <Link href={inlineCubeUrl(view, listUrl, "account-records", scope)}>Manage accounts</Link>
+          <Link href={inlineCubeUrl(view, listUrl, "account-analysis", scope)} aria-current="page">Account analysis</Link>
         </nav>
-        <AccountAnalysis view={view} cells={cells} listUrl={listUrl} checkedAt={cells === null ? null : new Date().toISOString()} />
+        <AccountAnalysis readerOnly={readerOnly} view={view} cells={cells} listUrl={listUrl} checkedAt={cells === null ? null : new Date().toISOString()} />
       </main>
     );
   }
 
   const directory = await loadDirectory(p.role === "all" ? { ...p, roles: undefined } : p);
   const listUrl = directoryUrl(directory, directory.page);
-  const recordUrl = (page: number) => inlineCubeUrl(view, directoryUrl(directory, page), "account-records");
-  const clearUrl = inlineCubeUrl(view, accountRoute, "account-records");
+  const recordUrl = (page: number) => inlineCubeUrl(view, directoryUrl(directory, page), "account-records", scope);
+  const clearUrl = inlineCubeUrl(view, accountRoute, "account-records", scope);
   const hasFilters = Boolean(directory.q || directory.period || directory.roles.length || directory.role !== "all" || directory.status !== "all");
   const count = countFormat.format(directory.total);
   const accountCount = directory.total === 1 ? "account" : "accounts";
@@ -56,12 +58,13 @@ export default async function ManageAccounts({ searchParams }: { searchParams: P
       </header>
       <nav className={styles.views} aria-label="Account Access views">
         <Link href={recordUrl(directory.page)} aria-current="page">Manage accounts</Link>
-        <Link href={inlineCubeUrl(view, listUrl)} id="account-analysis" prefetch={false}>Account analysis</Link>
+        <Link href={inlineCubeUrl(view, listUrl, "account-analysis", scope)} id="account-analysis" prefetch={false}>Account analysis</Link>
       </nav>
 
       <section className={styles.panel} id="account-records" tabIndex={-1} aria-labelledby="accounts-heading">
         <h2 id="accounts-heading" className="sr-only">Manage accounts</h2>
         <Form action={accountRoute + "#account-records"} key={listUrl} className={styles.filters}>
+          {scope ? <input type="hidden" name="scope" value={scope} /> : null}
           {Array.from(accountCubeFields(view), ([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
           {directory.roles.length > 0 ? <input type="hidden" name="roles" value={directory.roles.join(",")} /> : null}
           {directory.period ? <input type="hidden" name="period" value={directory.period} /> : null}

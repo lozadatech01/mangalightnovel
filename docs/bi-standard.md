@@ -22,6 +22,8 @@ Verify with `node --test tests/account-cube.test.mjs` and compare linked counts 
 
 [Project-wide BI and data design](https://github.com/hilocarloarmenion03/admin/tree/main/loxadawide)
 
-## Manga & Light Novel Analytics
+## Reading and advertising reports
 
-Open **Analytics** from the admin sidebar. Reader Accounts uses the existing live department aggregate, scoped to reader accounts. Slice by date range or current access status, combine them to dice, drill through year, quarter, and month levels, and pivot registration period and status. Count links open the matching reader directory. Source failures show unavailable; a successful query with no matching accounts shows zero. Title Engagement becomes available when the reader workflow supplies eligible starts and completion evidence. See the [V1.0 Title Engagement definition](https://github.com/hilocarloarmenion03/loxadaentertainmentscompany/blob/main/knowledge/specification/v1.0.md#L34168).
+Under **Account Access → Account Analysis**, choose **View reader accounts** to explore real reader registrations and current access status. Slice by date or status, combine those filters to dice, drill through year, quarter, and month, and pivot registration period and status. Linked counts open the matching reader accounts.
+
+The separate **Analytics** panel has **Title Engagement** and **Ad Settlements** tabs. Title Engagement waits for authorized reading starts and completion evidence. Ad Settlements waits for reconciled ad statements and approved creator allocations. Both show unavailable while their sources are missing. [V1.0 Title Engagement and Ad Settlements definitions](https://github.com/hilocarloarmenion03/loxadaentertainmentscompany/blob/main/knowledge/specification/v1.0.md#L34168)

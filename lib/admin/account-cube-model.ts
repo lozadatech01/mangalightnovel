@@ -9,7 +9,6 @@ export type AccountCell={account_type:string;status:AccountStatus;month:string;t
 export type CubeView={row:Axis;col:Axis;accountLevel:"group"|"type";timeLevel:TimeLevel;group:AccountGroup;roles:string[];status:AccountStatus|"";period:string;focus:string};
 export type CubeParams=Record<string,string|string[]|undefined>;
 export const accountRoute="/admin/accounts";
-export const readerAnalyticsRoute="/admin/analytics";
 export const axes=[["account","Account"],["status","Access status"],["time","Account date"]] as const;
 
 export function accountRoles(value:string|string[]|undefined,allowed:readonly string[]){
@@ -78,10 +77,11 @@ export function accountCubeFields(view:CubeView){
 export function accountListFields(listUrl:string){
  return new URLSearchParams(listUrl.split("#")[0].split("?")[1]);
 }
-export function inlineCubeUrl(view:CubeView,listUrl=accountRoute,section:"account-analysis"|"account-records"="account-analysis"){
+export function inlineCubeUrl(view:CubeView,listUrl=accountRoute,section:"account-analysis"|"account-records"="account-analysis",scope?:"readers"){
  const p=accountListFields(listUrl);
  accountCubeFields(view).forEach((value,name)=>p.set(name,value));
  if(section==="account-analysis")p.set("view","analysis");
+ if(scope)p.set("scope",scope);
  return accountRoute+"?"+p.toString()+"#"+section;
 }
 export const groupForRole=(role:string,customer:string)=>role===customer?"customers":role===adminRole?"admins":"suppliers";
