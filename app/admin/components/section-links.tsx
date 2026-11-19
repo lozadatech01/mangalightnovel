@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { readerAnalyticsRoute } from "@/lib/admin/account-cube-model";
 import { departmentId } from "@/lib/portal/config";
 import styles from "./supplier-tabs.module.css";
 
@@ -26,6 +27,7 @@ export default function SectionLinks({ homeLabel }: { homeLabel: string }) {
     <>
       <Link href="/admin" aria-current={path === "/admin" ? "page" : undefined}>{homeLabel}</Link>
       <Link href="/admin/accounts" aria-current={within(path, "/admin/accounts") ? "page" : undefined}>Account Access</Link>
+      <Link href={readerAnalyticsRoute} aria-current={within(path, readerAnalyticsRoute) ? "page" : undefined}>Analytics</Link>
       <Link href={supplierViews[0].href} aria-current={activeSupplierView(path) ? "page" : undefined}>Suppliers</Link>
     </>
   );

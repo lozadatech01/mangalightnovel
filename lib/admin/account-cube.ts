@@ -23,15 +23,15 @@ async function loadAdminTotals(db:NonNullable<ReturnType<typeof createAdminClien
  return Array.from(totals,([month,total]):AccountCell=>({account_type:adminRole,status:"not_tracked",month,total}));
 }
 
-export async function loadAccountCube(){
+export async function loadAccountCube(scope:"all"|"readers"="all"){
  await requireAdmin();
  const db=createAdminClient();
  if(!db)return null;
- const [{data,error},staff]=await Promise.all([db.rpc("department_account_cube"),loadAdminTotals(db)]);
+ const [{data,error},staff]=await Promise.all([db.rpc("department_account_cube"),scope==="all"?loadAdminTotals(db):Promise.resolve([])]);
  if(error||!Array.isArray(data)||!staff)return null;
  const allowed=[customerType,...supplierTypes];
  const rows=data as AccountCell[];
  if(rows.some(row=>!row||!allowed.includes(row.account_type)||!accountPeriod(row.month)||periodDepth(row.month)!==3||
    !["active","suspended"].includes(row.status)||!Number.isSafeInteger(row.total)||row.total<0))return null;
- return [...rows,...staff];
+ return scope==="readers"?rows.filter(row=>row.account_type===customerType):[...rows,...staff];
 }
