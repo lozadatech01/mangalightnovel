@@ -113,7 +113,7 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
         </div>
         <p className="sr-note"><strong>{measureLabels[view.measure]}</strong> · {windowLabel} · {view.level} × {breakdownLabels[view.breakdown].toLowerCase()}</p>
         {!sourceAvailable ? <p className="sr-alert">The report source is unavailable.</p>
-          : !hasAvailablePeriod ? <p className="sr-alert">Data unavailable. This period has no verified reading snapshot.</p>
+          : !hasAvailablePeriod ? <p className="sr-alert">Data unavailable. No displayed period has full verified coverage.{view.level !== "month" ? " Group dates by month to check individual months." : ""}</p>
           : !total?.available ? <p className="sr-alert">Verified data covers {availablePeriods} of {dates.length} displayed periods. Totals require coverage for the full selection.</p> : null}
         <div className="sa-table-wrap" tabIndex={0} role="region" aria-label="Title Engagement results">
           <table className="sa-table ac-table" aria-label={measureLabels[view.measure]}>
