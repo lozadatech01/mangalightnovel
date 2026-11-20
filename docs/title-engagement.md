@@ -2,6 +2,8 @@
 
 Open **Analytics → Title Engagement** in the department admin workspace. The cube answers which titles, content types and verified publishers had eligible reading in a period. It uses the Asia/Manila start date and the `SIGNED_IN_ELIGIBLE_V1` cohort. [V1.0 report contract](https://github.com/hilocarloarmenion03/loxadaentertainmentscompany/blob/main/knowledge/specification/v1.0.md#L34168)
 
+Open a publisher row to see its titles, then open a title to see its chapters. Independently, open a year column to see quarters, then open a quarter to see its months. The content breadcrumbs and date drill controls roll up their own hierarchy. Pivot puts dates on rows and keeps both selections. Reading starts count eligible chapter reading attempts after authorized delivery.
+
 | Measure | Calculation |
 | --- | --- |
 | Read starts | One per canonical attempt after authorized delivery of the exact release. |
@@ -13,7 +15,7 @@ Open **Analytics → Title Engagement** in the department admin workspace. The c
 
 - **Fact grain** is one eligible reading attempt in `manga_analytics.fact_reading_attempt`.
 - **Star view** joins the fact to the start-date, reader-scope and flattened `dim_reading_unit_release` dimensions. Release-month rollups supply additive counts and work-month rollups preserve the canonical count of distinct readers.
-- **Snowflake** stores work, edition, reading unit and exact release separately. Publisher attribution requires verified evidence for that exact release. Unattributed releases remain visible as such.
+- **Snowflake** stores work, edition, chapter and exact release separately. Publisher attribution requires verified evidence for that exact release. A title can appear under more than one verified publisher when its releases differ. Chapters use their edition-specific reading-unit IDs, so multiple release versions of one chapter roll up together. Unattributed releases remain visible as such.
 - **Galaxy** depends on a second independently sourced fact. The Ad Settlements tab needs reconciled ad statements and approved creator allocations before it can participate.
 
 ## Source handoff

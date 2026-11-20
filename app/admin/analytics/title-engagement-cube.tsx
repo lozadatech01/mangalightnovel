@@ -2,7 +2,7 @@ import Link from "next/link";
 import Form from "next/form";
 import SubmitButton from "@/app/admin/components/submit-button";
 import {
-  breakdownLabels, engagementDrill, engagementUrl, engagementValue, kindLabels, measureLabels, timeLevels,
+  breakdownLabels, engagementContentMember, engagementDateMember, engagementDrill, engagementUrl, engagementValue, kindLabels, measureLabels, timeLevels,
   type Cell, type DateWindow, type EngagementReport, type EngagementView,
 } from "@/lib/admin/title-engagement-model";
 import { manilaMonth } from "@/lib/admin/account-cube-model";
@@ -31,12 +31,14 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
   const years = [...new Set([currentYear, currentYear - 1, currentYear - 2, view.year])].sort((a, b) => b - a);
   const dates = report.buckets.filter(bucket => bucket.bucket !== null);
   const total = report.buckets.find(bucket => bucket.bucket === null);
-  const rows = view.pivot
-    ? report.members.map(member => ({ id: member.member_id, label: member.label }))
-    : dates.map(({ bucket }) => ({ id: bucket, label: periodLabel(bucket, view.level) }));
-  const columns = view.pivot
-    ? dates.map(({ bucket }) => ({ id: bucket, label: periodLabel(bucket, view.level) }))
-    : report.members.map(member => ({ id: member.member_id, label: member.label }));
+  const contentHeaders = report.members.map(({ member_id, label }) => ({
+    id: member_id, label, href: engagementContentMember(view, member_id),
+  }));
+  const dateHeaders = dates.flatMap(({ bucket }) => bucket === null ? [] : [{
+    id: bucket, label: periodLabel(bucket, view.level), href: engagementDateMember(view, bucket),
+  }]);
+  const rows = view.pivot ? dateHeaders : contentHeaders;
+  const columns = view.pivot ? contentHeaders : dateHeaders;
   const cells = new Map(report.cells.map(cell => [JSON.stringify([cell.bucket, cell.memberId]), cell]));
   const down = engagementDrill(view, 1);
   const up = engagementDrill(view, -1);
@@ -46,9 +48,11 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
   const pageCount = Math.max(1, Math.ceil(report.memberCount / 12));
   const hasAvailablePeriod = dates.some(date => date.available);
   const availablePeriods = dates.filter(date => date.available).length;
+  const publishers = engagementUrl({ ...view, breakdown: "publisher", publisherScope: null, work: null, page: 1 });
+  const publisher = engagementUrl({ ...view, breakdown: "title", work: null, page: 1 });
 
   function renderValue(row: string | null, col: string | null) {
-    const cell: Cell | undefined = cells.get(JSON.stringify(view.pivot ? [col, row] : [row, col]));
+    const cell: Cell | undefined = cells.get(JSON.stringify(view.pivot ? [row, col] : [col, row]));
     const value = engagementValue(cell, view.measure);
     if (value === null) return <span aria-label={cell && view.measure === "rate" ? "Not applicable" : "Data unavailable"}>—</span>;
     return view.measure === "rate" ? percentLabel.format(value) : countLabel.format(value);
@@ -58,9 +62,13 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
     <section id="engagement-cube" className="sr-shell ac-inline" aria-labelledby="engagement-heading">
       <div className="sr-card ac-panel">
         <h2 id="engagement-heading">Title Engagement</h2>
-        <p>Analyze eligible signed-in reading by Manila start date, content type, title, or verified publisher.</p>
+        <p>Open a publisher to see its titles, then open a title to see its chapters. Dates use Manila time.</p>
         <Form action="/admin/analytics#engagement-cube" className="ac-form" key={engagementUrl(view)}>
           <input type="hidden" name="report" value="title-engagement" />
+          <input type="hidden" name="breakdown" value={view.breakdown} />
+          {view.publisherScope ? <input type="hidden" name="publisherScope" value={view.publisherScope} /> : null}
+          {view.work ? <input type="hidden" name="work" value={view.work} /> : null}
+          {view.quarter ? <input type="hidden" name="quarter" value={view.quarter} /> : null}
           {view.pivot ? <input type="hidden" name="pivot" value="yes" /> : null}
           <div className="ac-fields">
             <label>Start year
@@ -80,22 +88,9 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
                 {Object.entries(kindLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
               </select>
             </label>
-            {report.publishers.length || view.publisher ? <label>Publisher
-              <select name="publisher" defaultValue={view.publisher ?? ""}>
-                <option value="">All sources</option>
-                {view.publisher && !report.publishers.some(publisher => publisher.id === view.publisher)
-                  ? <option value={view.publisher}>Publisher unavailable</option> : null}
-                {report.publishers.map(publisher => <option key={publisher.id} value={publisher.id}>{publisher.label}</option>)}
-              </select>
-            </label> : null}
             <label>Group dates by
               <select name="groupDates" defaultValue={view.level}>
                 {timeLevels.map(level => <option key={level} value={level}>{level[0].toUpperCase() + level.slice(1)}</option>)}
-              </select>
-            </label>
-            <label>Breakdown
-              <select name="breakdown" defaultValue={view.breakdown}>
-                {Object.entries(breakdownLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
               </select>
             </label>
             <label>Measure
@@ -107,10 +102,17 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
           <div className="ac-report-actions"><SubmitButton label="Apply filters" pendingLabel="Updating report…" /></div>
         </Form>
         <div className="ac-drills" role="group" aria-label="Cube layout">
-          {up ? <Link className="ac-control" href={up} prefetch={false}>Drill up</Link> : null}
-          {down ? <Link className="ac-control" href={down} prefetch={false}>Drill down</Link> : null}
+          {up ? <Link className="ac-control" href={up} prefetch={false}>Drill up dates</Link> : null}
+          {down ? <Link className="ac-control" href={down} prefetch={false}>Drill down dates</Link> : null}
           <Link className="ac-control" href={engagementUrl({ ...view, pivot: !view.pivot })} prefetch={false}>Pivot rows and columns</Link>
         </div>
+        {view.breakdown !== "publisher" ? <nav className="ac-drills" aria-label="Content hierarchy">
+          <Link href={publishers} className="sr-link" prefetch={false}>All publishers</Link>
+          {view.publisherScope ? <><span aria-hidden="true">›</span>{view.work
+            ? <Link href={publisher} className="sr-link" prefetch={false}>{report.publisherLabel ?? "Publisher"}</Link>
+            : <span aria-current="location">{report.publisherLabel ?? "Publisher"}</span>}</> : null}
+          {view.work ? <><span aria-hidden="true">›</span><span aria-current="location">{report.titleLabel ?? "Title"}</span></> : null}
+        </nav> : null}
         <p className="sr-note"><strong>{measureLabels[view.measure]}</strong> · {windowLabel} · {view.level} × {breakdownLabels[view.breakdown].toLowerCase()}</p>
         {!sourceAvailable ? <p className="sr-alert">The report source is unavailable.</p>
           : !hasAvailablePeriod ? <p className="sr-alert">Data unavailable. No displayed period has full verified coverage.{view.level !== "month" ? " Group dates by month to check individual months." : ""}</p>
@@ -118,12 +120,13 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
         <div className="sa-table-wrap" tabIndex={0} role="region" aria-label="Title Engagement results">
           <table className="sa-table ac-table" aria-label={measureLabels[view.measure]}>
             <thead><tr>
-              <th scope="col">{view.pivot ? breakdownLabels[view.breakdown] : "Start period"}</th>
-              {columns.map(column => <th scope="col" key={column.id}>{column.label}</th>)}
+              <th scope="col">{view.pivot ? "Start period" : breakdownLabels[view.breakdown]}</th>
+              {columns.map(column => <th scope="col" key={column.id}>{column.href
+                ? <Link href={column.href} className="sr-link" prefetch={false}>{column.label}</Link> : column.label}</th>)}
               <th scope="col">Total</th>
             </tr></thead>
             <tbody>{rows.map(row => <tr key={row.id}>
-              <th scope="row">{row.label}</th>
+              <th scope="row">{row.href ? <Link href={row.href} className="sr-link" prefetch={false}>{row.label}</Link> : row.label}</th>
               {columns.map(column => <td key={column.id}>{renderValue(row.id, column.id)}</td>)}
               <td>{renderValue(row.id, null)}</td>
             </tr>)}</tbody>

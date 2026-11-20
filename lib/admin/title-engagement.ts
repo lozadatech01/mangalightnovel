@@ -7,11 +7,11 @@ export async function loadTitleEngagement(view: EngagementView, window: DateWind
   await requireAdmin();
   const db = createAdminClient();
   if (!db) return null;
-  const { data, error } = await db.rpc("manga_title_engagement_cube", {
+  const { data, error } = await db.rpc("manga_title_engagement_hierarchy", {
     p_from: window.from, p_to: window.to, p_level: view.level, p_breakdown: view.breakdown,
-    p_kind: view.kind, p_publisher: view.publisher, p_page: view.page,
+    p_kind: view.kind, p_publisher_scope: view.publisherScope, p_work: view.work, p_page: view.page,
   });
   if (error || !data || !Array.isArray(data.buckets) || !Array.isArray(data.members) ||
-      !Array.isArray(data.publishers) || !Array.isArray(data.cells) || !Number.isSafeInteger(data.memberCount)) return null;
+      !Array.isArray(data.cells) || !Number.isSafeInteger(data.memberCount)) return null;
   return data as EngagementReport;
 }
