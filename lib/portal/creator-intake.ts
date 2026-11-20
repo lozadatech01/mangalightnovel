@@ -3,6 +3,7 @@ export const formats = { pages: "Page images", text: "Text", epub: "EPUB" };
 export const contributorRoles = { author: "Author", illustrator: "Illustrator", translator: "Translator", adapter: "Adapter" };
 export const territories = { PH: "Philippines", WORLD: "Worldwide" };
 export const maxPeople = 12;
+export const creatorTextLimit = 10;
 
 export type Person = { first: string; last: string; role?: string };
 export type Applicant = { applicant: true };
@@ -41,7 +42,7 @@ export function readRights(fields: Record<string, string | number | CreatorValue
 const namePattern = /^[\p{L}\p{M}][\p{L}\p{M} .'’\p{Pd}]{0,79}$/u;
 const cleanName = (s: string) => s.trim().replace(/\s+/g, " ").normalize("NFC");
 const validDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0,10) === s;
-export function parseRights(input: RightsInput, submit: boolean) {
+export function parseRights(input: RightsInput, submit: boolean, prior?: RightsInput) {
   const values: Record<string, CreatorValue> = {};
   if (!["", "solo", "shared"].includes(input.mode)) return { error: "Choose who created and owns the title." };
   if (input.mode === "solo") {
@@ -55,6 +56,10 @@ export function parseRights(input: RightsInput, submit: boolean) {
         const first = cleanName(row.first), last = cleanName(row.last);
         if (!first && !last && !row.role) continue;
         if (!namePattern.test(first) || (last && !namePattern.test(last))) return { error: "Enter a valid first or single name for each person. A last name is optional." };
+        if ((first.length > creatorTextLimit || last.length > creatorTextLimit) &&
+            !prior?.[key].some(saved => saved.first === first && saved.last === last)) {
+          return { error: `Use up to ${creatorTextLimit} characters per name field.` };
+        }
         if (key === "contributors" && !Object.hasOwn(contributorRoles, row.role)) return { error: "Choose a role for each contributor." };
         const person = { first, last, ...(key === "contributors" ? { role: row.role } : {}) };
         const signature = JSON.stringify(person).toLocaleLowerCase();

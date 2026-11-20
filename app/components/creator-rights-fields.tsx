@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { blankPerson, contributorRoles, maxPeople, territories, type RightsInput } from "@/lib/portal/creator-intake";
+import { blankPerson, contributorRoles, creatorTextLimit, maxPeople, territories, type RightsInput } from "@/lib/portal/creator-intake";
 
-export default function CreatorRightsFields({ initial }: { initial: RightsInput }) {
+export default function CreatorRightsFields({ initial, saved }: { initial: RightsInput; saved: RightsInput }) {
   const [draft, setDraft] = useState(initial);
   return <>
     <input type="hidden" name="creatorRights" value={JSON.stringify(draft)} />
@@ -21,9 +21,9 @@ export default function CreatorRightsFields({ initial }: { initial: RightsInput 
         <legend>{key === "contributors" ? "Contributors" : "Rights holders"}</legend>
         {draft[key].map((row, index) => <fieldset className="mt-3 space-y-2" key={index}>
           <legend>{key === "contributors" ? "Contributor" : "Rights holder"} {index + 1}</legend>
-          <label>First or single name<input maxLength={80} value={row.first} onChange={event => update(
+          <label>First or single name<input maxLength={Math.max(creatorTextLimit, saved[key][index]?.first.length ?? 0)} value={row.first} onChange={event => update(
             draft[key].map((person, i) => i === index ? { ...person, first: event.target.value } : person))} /></label>
-          <label>Last name (optional)<input maxLength={80} value={row.last} onChange={event => update(
+          <label>Last name (optional)<input maxLength={Math.max(creatorTextLimit, saved[key][index]?.last.length ?? 0)} value={row.last} onChange={event => update(
             draft[key].map((person, i) => i === index ? { ...person, last: event.target.value } : person))} /></label>
           {key === "contributors" ? <label>Role<select value={row.role} onChange={event => update(
             draft[key].map((person, i) => i === index ? { ...person, role: event.target.value } : person))}>

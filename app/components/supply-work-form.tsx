@@ -1,7 +1,7 @@
 "use client";
 
 import CreatorRightsFields from "./creator-rights-fields";
-import { decodeRights, readRights } from "@/lib/portal/creator-intake";
+import { creatorTextLimit, decodeRights, readRights } from "@/lib/portal/creator-intake";
 import { useActionState, useId } from "react";
 import { saveSupplyWork } from "@/app/actions/supply-work";
 import { displayValue, supplyFieldsForStep, type CreatorTitleStep, type SupplyProfile, type Values } from "@/lib/portal/supply-model";
@@ -18,6 +18,8 @@ export default function SupplyForm({ profile, item, invitation, revision, title,
 }) {
   const [result, action, saving] = useActionState(saveSupplyWork, { error: "" });
   const helpId = useId();
+  const savedRights = readRights(values);
+  const titleLimit = titleStep ? Math.max(creatorTextLimit, title.length) : 160;
 
   return <form className="sp-form" action={action} key={result.reset}>
     <input type="hidden" name="item" value={item} />
@@ -25,9 +27,9 @@ export default function SupplyForm({ profile, item, invitation, revision, title,
     <input type="hidden" name="expected" value={revision} />
     {titleStep ? <input type="hidden" name="titleStep" value={titleStep} /> : null}
     {result.error ? <p role="alert" className="sr-alert">{result.error}</p> : null}
-    {titleStep !== "rights" ? <label>Title<input name="title" required minLength={2} maxLength={160}
+    {titleStep !== "rights" ? <label>{titleStep ? "Title (up to 10 characters for new titles)" : "Title"}<input name="title" required minLength={2} maxLength={titleLimit}
       defaultValue={result.attempted?.title ?? title} /></label> : null}
-    {titleStep === "rights" ? <CreatorRightsFields initial={decodeRights(result.attempted?.creatorRights ?? "") ?? readRights(values)} /> : null}
+    {titleStep === "rights" ? <CreatorRightsFields initial={decodeRights(result.attempted?.creatorRights ?? "") ?? savedRights} saved={savedRights} /> : null}
     {titleStep === "rights" && typeof values.contributors === "string" ? <p className="sr-note">Earlier versions contain the original notes. Add the people and territory here to use the structured form.</p> : null}
     {supplyFieldsForStep(profile.fields, titleStep).filter(field => titleStep !== "rights" || field.key === "claim_evidence").map(field => {
       const value = result.attempted?.[field.key] ?? displayValue(field, values[field.key]);
