@@ -4,7 +4,7 @@ export const profiles: Record<string, SupplyProfile> = {
   "creator": {
     "primary": "Titles",
     "nextTab": "Submissions",
-    "singular": "title declaration",
+    "singular": "title",
     "receipt": "Rights review requested",
     "pending": "Chapter submission opens after effective submission permission is recorded for the exact edition.",
     "fields": [
@@ -20,42 +20,47 @@ export const profiles: Record<string, SupplyProfile> = {
       },
       {
         "key": "language",
-        "label": "Edition or delivery language",
+        "label": "Language",
         "type": "text",
         "required": true,
         "maxLength": 48
       },
       {
         "key": "format",
-        "label": "Edition format",
+        "label": "Format",
+        "help": "For example, page images or text.",
         "type": "text",
         "required": true,
         "maxLength": 80
       },
       {
         "key": "contributors",
-        "label": "Contributor roles and claim references",
+        "label": "Who worked on this title?",
+        "help": "List each role, such as author or illustrator, with a protected reference.",
         "type": "long",
         "required": true,
         "maxLength": 2000
       },
       {
         "key": "claimants",
-        "label": "Rightsholder and coholder claim references",
+        "label": "Who can give permission to publish?",
+        "help": "Include anyone who shares the rights. Use protected references for personal details.",
         "type": "long",
         "required": true,
         "maxLength": 2000
       },
       {
         "key": "requested_scope",
-        "label": "Requested publication channels, territories and dates",
+        "label": "What publication are you requesting?",
+        "help": "Describe where, when, and how you want Loxada to publish this edition.",
         "type": "long",
         "required": true,
         "maxLength": 2000
       },
       {
         "key": "claim_evidence",
-        "label": "Chain-of-title evidence references or unresolved claims",
+        "label": "Supporting references",
+        "help": "Add a protected document reference or describe any unresolved claims.",
         "type": "long",
         "required": false,
         "maxLength": 2000
