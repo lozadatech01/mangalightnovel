@@ -31,6 +31,11 @@ export type EngagementView = {
 export type DateWindow = { from: string; to: string; months: number };
 export type Bucket = { bucket: string | null; available: boolean; oldest_cutoff: string | null };
 export type Member = { member_id: string; label: string };
+type CatalogChoice = { id: string; label: string };
+export type EngagementCatalog = {
+  publishers: CatalogChoice[];
+  titles: (CatalogChoice & { kind: Kind; scopes: string[] })[];
+};
 export type Cell = { bucket: string | null; memberId: string | null; starts: number; completions: number; readers: number | null };
 export type EngagementReport = {
   buckets: Bucket[];
@@ -64,14 +69,15 @@ export function engagementView(params: CubeParams, now: Date): EngagementView {
   const scope = scalar(params.publisherScope) || (oldPublisher && `publisher:${oldPublisher}`);
   const publisherScope = scope === "unattributed" || /^publisher:[\s\S]{1,160}$/.test(scope) ? scope : null;
   const workId = scalar(params.work);
-  const work = publisherScope && workId.length > 0 && workId.length <= 160 ? workId : null;
+  const work = workId.length > 0 && workId.length <= 160 ? workId : null;
   const level = choice(timeLevels, params.groupDates, "year");
   const quarter = integer(params.quarter, 1, year === currentYear ? Math.ceil(currentMonth / 3) : 4, 0);
   return {
     year, month: month || null, quarter: !month && level === "month" ? quarter || null : null,
     kind: Object.hasOwn(kindLabels, kind) ? kind as Kind : null,
     level,
-    breakdown: work ? "chapter" : publisherScope ? "title" : choice(["kind", "title", "publisher"] as const, params.breakdown, "publisher"),
+    breakdown: choice(Object.keys(breakdownLabels) as Breakdown[], params.breakdown,
+      work ? "chapter" : publisherScope ? "title" : "publisher"),
     measure: choice(Object.keys(measureLabels) as Measure[], params.measure, "starts"),
     publisherScope, work,
     pivot: params.pivot === "yes",
@@ -119,9 +125,9 @@ export function engagementDateMember(view: EngagementView, date: string) {
 
 export function engagementContentMember(view: EngagementView, id: string) {
   if (view.breakdown === "publisher") {
-    return engagementUrl({ ...view, breakdown: "title", publisherScope: id, work: null, page: 1 });
+    return engagementUrl({ ...view, breakdown: "title", publisherScope: id, page: 1 });
   }
-  if (view.breakdown === "title" && view.publisherScope) {
+  if (view.breakdown === "title") {
     return engagementUrl({ ...view, breakdown: "chapter", work: id, page: 1 });
   }
   return null;

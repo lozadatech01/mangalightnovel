@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Form from "next/form";
 import SubmitButton from "@/app/admin/components/submit-button";
+import EngagementContentFilters from "./engagement-content-filters";
 import {
-  breakdownLabels, engagementContentMember, engagementDateMember, engagementDrill, engagementUrl, engagementValue, kindLabels, measureLabels, timeLevels,
-  type Cell, type DateWindow, type EngagementReport, type EngagementView,
+  breakdownLabels, engagementContentMember, engagementDateMember, engagementDrill, engagementUrl, engagementValue, measureLabels, timeLevels,
+  type Cell, type DateWindow, type EngagementCatalog, type EngagementReport, type EngagementView,
 } from "@/lib/admin/title-engagement-model";
 import { manilaMonth } from "@/lib/admin/account-cube-model";
 
@@ -24,8 +25,9 @@ function periodLabel(bucket: string | null, level: EngagementView["level"]) {
   return labelOfDate(bucket);
 }
 
-export default function TitleEngagementCube({ view, window, report, now, sourceAvailable }: {
-  view: EngagementView; window: DateWindow; report: EngagementReport; now: Date; sourceAvailable: boolean;
+export default function TitleEngagementCube({ view, window, report, catalog, now, sourceAvailable }: {
+  view: EngagementView; window: DateWindow; report: EngagementReport; catalog: EngagementCatalog | null;
+  now: Date; sourceAvailable: boolean;
 }) {
   const [currentYear, currentMonth] = manilaMonth(now).split("-").map(Number);
   const years = [...new Set([currentYear, currentYear - 1, currentYear - 2, view.year])].sort((a, b) => b - a);
@@ -49,7 +51,11 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
   const hasAvailablePeriod = dates.some(date => date.available);
   const availablePeriods = dates.filter(date => date.available).length;
   const publishers = engagementUrl({ ...view, breakdown: "publisher", publisherScope: null, work: null, page: 1 });
-  const publisher = engagementUrl({ ...view, breakdown: "title", work: null, page: 1 });
+  const titles = engagementUrl({ ...view, breakdown: "title", work: null, page: 1 });
+  const needsTitle = view.breakdown === "chapter" && !view.work;
+  const catalogEmpty = catalog?.titles.length === 0;
+  const publisherLabel = catalog?.publishers.find(item => item.id === view.publisherScope)?.label ?? report.publisherLabel;
+  const titleLabel = catalog?.titles.find(item => item.id === view.work)?.label ?? report.titleLabel;
 
   function renderValue(row: string | null, col: string | null) {
     const cell: Cell | undefined = cells.get(JSON.stringify(view.pivot ? [row, col] : [col, row]));
@@ -62,15 +68,13 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
     <section id="engagement-cube" className="sr-shell ac-inline" aria-labelledby="engagement-heading">
       <div className="sr-card ac-panel">
         <h2 id="engagement-heading">Title Engagement</h2>
-        <p>Open a publisher to see its titles, then open a title to see its chapters. Dates use Manila time.</p>
+        <p>Choose a content level and filter by publisher or title. Use the table links to drill down. Dates use Manila time.</p>
         <Form action="/admin/analytics#engagement-cube" className="ac-form" key={engagementUrl(view)}>
           <input type="hidden" name="report" value="title-engagement" />
-          <input type="hidden" name="breakdown" value={view.breakdown} />
-          {view.publisherScope ? <input type="hidden" name="publisherScope" value={view.publisherScope} /> : null}
-          {view.work ? <input type="hidden" name="work" value={view.work} /> : null}
           {view.quarter ? <input type="hidden" name="quarter" value={view.quarter} /> : null}
           {view.pivot ? <input type="hidden" name="pivot" value="yes" /> : null}
           <div className="ac-fields">
+            <EngagementContentFilters catalog={catalog} view={view} />
             <label>Start year
               <select name="year" defaultValue={view.year}>{years.map(year => <option key={year}>{year}</option>)}</select>
             </label>
@@ -80,12 +84,6 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
                 {Array.from({ length: 12 }, (_, index) => index + 1).map(month => (
                   <option key={month} value={month}>{monthLabel.format(new Date(Date.UTC(2020, month - 1, 1)))}</option>
                 ))}
-              </select>
-            </label>
-            <label>Content type
-              <select name="kind" defaultValue={view.kind ?? ""}>
-                <option value="">All content types</option>
-                {Object.entries(kindLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
               </select>
             </label>
             <label>Group dates by
@@ -106,15 +104,20 @@ export default function TitleEngagementCube({ view, window, report, now, sourceA
           {down ? <Link className="ac-control" href={down} prefetch={false}>Drill down dates</Link> : null}
           <Link className="ac-control" href={engagementUrl({ ...view, pivot: !view.pivot })} prefetch={false}>Pivot rows and columns</Link>
         </div>
-        {view.breakdown !== "publisher" ? <nav className="ac-drills" aria-label="Content hierarchy">
+        {view.breakdown !== "publisher" || view.publisherScope || view.work ? <nav className="ac-drills" aria-label="Content hierarchy">
           <Link href={publishers} className="sr-link" prefetch={false}>All publishers</Link>
           {view.publisherScope ? <><span aria-hidden="true">›</span>{view.work
-            ? <Link href={publisher} className="sr-link" prefetch={false}>{report.publisherLabel ?? "Publisher"}</Link>
-            : <span aria-current="location">{report.publisherLabel ?? "Publisher"}</span>}</> : null}
-          {view.work ? <><span aria-hidden="true">›</span><span aria-current="location">{report.titleLabel ?? "Title"}</span></> : null}
+            ? <Link href={titles} className="sr-link" prefetch={false}>{publisherLabel ?? "Publisher"}</Link>
+            : <span aria-current="location">{publisherLabel ?? "Publisher"}</span>}</> : null}
+          {view.work && !view.publisherScope ? <><span aria-hidden="true">›</span>
+            <Link href={titles} className="sr-link" prefetch={false}>All titles</Link></> : null}
+          {view.work ? <><span aria-hidden="true">›</span><span aria-current="location">{titleLabel ?? "Title"}</span></> : null}
         </nav> : null}
         <p className="sr-note"><strong>{measureLabels[view.measure]}</strong> · {windowLabel} · {view.level} × {breakdownLabels[view.breakdown].toLowerCase()}</p>
-        {!sourceAvailable ? <p className="sr-alert">The report source is unavailable.</p>
+        {catalog === null ? <p className="sr-alert">The publisher and title catalog could not be loaded.</p> : null}
+        {catalogEmpty ? <p className="sr-alert">No approved titles have been loaded into Analytics. Reading results are unavailable.</p>
+          : needsTitle ? <p className="sr-alert">Select a title and apply filters to see its chapters.</p>
+          : !sourceAvailable ? <p className="sr-alert">The report source is unavailable.</p>
           : !hasAvailablePeriod ? <p className="sr-alert">Data unavailable. No displayed period has full verified coverage.{view.level !== "month" ? " Group dates by month to check individual months." : ""}</p>
           : !total?.available ? <p className="sr-alert">Verified data covers {availablePeriods} of {dates.length} displayed periods. Totals require coverage for the full selection.</p> : null}
         <div className="sa-table-wrap" tabIndex={0} role="region" aria-label="Title Engagement results">
