@@ -36,7 +36,8 @@ export default async function MangaAnalytics({ searchParams }: { searchParams: P
   const now = new Date();
   const view = engagementView(params, now);
   const window = engagementWindow(view, now);
-  const results = report.id === "title-engagement" ? await loadTitleEngagement(view, window) : null;
+  const { results, catalog } = report.id === "title-engagement"
+    ? await loadTitleEngagement(view, window) : { results: null, catalog: null };
   if (results) {
     const lastPage = Math.max(1, Math.ceil(results.memberCount / 12));
     if (view.page > lastPage) redirect(engagementUrl({ ...view, page: lastPage }));
@@ -55,7 +56,7 @@ export default async function MangaAnalytics({ searchParams }: { searchParams: P
         ))}
       </nav>
       {report.id === "title-engagement" ? (
-        <TitleEngagementCube view={view} window={window} report={results ?? unavailableEngagement(view, window)}
+        <TitleEngagementCube view={view} window={window} report={results ?? unavailableEngagement(view, window)} catalog={catalog}
           now={now} sourceAvailable={results !== null} />
       ) : (
         <section className="ink-register" aria-labelledby="analytics-report-heading">
