@@ -1,5 +1,6 @@
 "use server";
 
+import { decodeRights, parseRights } from "@/lib/portal/creator-intake";
 import { redirect } from "next/navigation";
 import { requireAdmin, requirePortal } from "@/lib/auth/authorization";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -24,6 +25,7 @@ export async function saveSupplyWork(state: SupplyFormState, form: FormData): Pr
   const step = account.account_type === "creator" ? form.get("titleStep") === "rights" ? "rights" : "details" : undefined;
   const editedFields = supplyFieldsForStep(profile.fields, step);
   const attempted = Object.fromEntries(["title", ...editedFields.map(field => field.key)].map(key => [key, inputText(form.get(key)).slice(0, 2000)]));
+  if (step === "rights") attempted.creatorRights = inputText(form.get("creatorRights")).slice(0, 16000);
   const failure = (error: string) => ({ error, attempted, reset: (state.reset ?? 0) + 1 });
   const target = optionalId(form.get("item"));
   const expected = integer(form.get("expected"), 2147483646, 0);
@@ -32,7 +34,12 @@ export async function saveSupplyWork(state: SupplyFormState, form: FormData): Pr
   if (!target || expected === null || !["draft", "submit"].includes(intent)) return failure(failures.invalid);
   if (step === "details" && intent === "submit") return failure("Open Rights for review to submit this title.");
   if (step === "rights" && expected === 0) return failure("Save the title details first.");
-  const parsed = parseFields(editedFields, form, intent === "submit");
+  const parsed = parseFields(step === "rights" ? editedFields.filter(field => field.key === "claim_evidence") : editedFields, form, intent === "submit");
+  if (step === "rights" && attempted.creatorRights.length >= 16000) return failure("The contributor or rights holder list is too long.");
+  const rights = step === "rights" ? decodeRights(attempted.creatorRights) : null;
+  if (step === "rights" && !rights) return failure("Check the contributor and rights holder entries.");
+  const structured = rights ? parseRights(rights, intent === "submit") : { values: {} };
+  if (!structured.values) return failure(structured.error);
   if (!parsed.values) return failure(parsed.error);
   const db = createAdminClient();
   if (!db) return failure("Supplier work is temporarily unavailable.");
@@ -48,11 +55,15 @@ export async function saveSupplyWork(state: SupplyFormState, form: FormData): Pr
   const title = step === "rights" ? prior?.title ?? "" : inputText(form.get("title"));
   if (title.length < 2 || title.length > 160) return failure("Enter a title between 2 and 160 characters.");
   const editedKeys = new Set(editedFields.map(field => field.key));
+  const preserved = Object.entries(prior?.fields ?? {}).filter(([key, value]) =>
+    !editedKeys.has(key) || (step === "rights" && key !== "claim_evidence" && typeof value === "string" && !Object.hasOwn(structured.values, key)));
   const values = {
-    ...Object.fromEntries(Object.entries(prior?.fields ?? {}).filter(([key]) => !editedKeys.has(key))),
+    ...Object.fromEntries(preserved),
     ...parsed.values,
+    ...structured.values,
   };
-  if (step === "rights" && intent === "submit" && profile.fields.some(field => field.required && values[field.key] === undefined)) {
+  if (step === "rights" && intent === "submit" && supplyFieldsForStep(profile.fields, "details").some(field =>
+    values[field.key] === undefined || (field.choices && !Object.hasOwn(field.choices, String(values[field.key]))))) {
     return failure("Finish the title details before submitting for review.");
   }
   const { data, error } = await db.rpc("supplier_work_save", {
