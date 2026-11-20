@@ -1,5 +1,7 @@
 "use client";
 
+import CreatorRightsFields from "./creator-rights-fields";
+import { decodeRights, readRights } from "@/lib/portal/creator-intake";
 import { useActionState, useId } from "react";
 import { saveSupplyWork } from "@/app/actions/supply-work";
 import { displayValue, supplyFieldsForStep, type CreatorTitleStep, type SupplyProfile, type Values } from "@/lib/portal/supply-model";
@@ -25,14 +27,18 @@ export default function SupplyForm({ profile, item, invitation, revision, title,
     {result.error ? <p role="alert" className="sr-alert">{result.error}</p> : null}
     {titleStep !== "rights" ? <label>Title<input name="title" required minLength={2} maxLength={160}
       defaultValue={result.attempted?.title ?? title} /></label> : null}
-    {supplyFieldsForStep(profile.fields, titleStep).map(field => {
+    {titleStep === "rights" ? <CreatorRightsFields initial={decodeRights(result.attempted?.creatorRights ?? "") ?? readRights(values)} /> : null}
+    {titleStep === "rights" && typeof values.contributors === "string" ? <p className="sr-note">Earlier versions contain the original notes. Add the people and territory here to use the structured form.</p> : null}
+    {supplyFieldsForStep(profile.fields, titleStep).filter(field => titleStep !== "rights" || field.key === "claim_evidence").map(field => {
       const value = result.attempted?.[field.key] ?? displayValue(field, values[field.key]);
       const description = field.help ? `${helpId}-${field.key}` : undefined;
+      const legacyChoice = field.choices && value && !Object.hasOwn(field.choices, value);
       const input = { name: field.key, defaultValue: value, "aria-describedby": description };
       const control = <>
         <label>{field.label}
           {field.type === "choice"
             ? <select {...input}><option value="">Select</option>
+                {legacyChoice ? <option value={value} disabled>{value} (previous value)</option> : null}
                 {Object.entries(field.choices ?? {}).map(([code, label]) => <option key={code} value={code}>{label}</option>)}
               </select>
             : field.type === "long"

@@ -1,3 +1,4 @@
+import { formats, languages } from "./creator-intake";
 import type { SupplyProfile } from "./supply-model";
 
 export const profiles: Record<string, SupplyProfile> = {
@@ -21,15 +22,16 @@ export const profiles: Record<string, SupplyProfile> = {
       {
         "key": "language",
         "label": "Language",
-        "type": "text",
+        "type": "choice",
+        "choices": languages,
         "required": true,
         "maxLength": 48
       },
       {
         "key": "format",
         "label": "Format",
-        "help": "For example, page images or text.",
-        "type": "text",
+        "type": "choice",
+        "choices": formats,
         "required": true,
         "maxLength": 80
       },

@@ -1,3 +1,5 @@
+import { describeCreatorValue, type CreatorValue } from "./creator-intake";
+
 export type SupplyField = {
   key: string;
   label: string;
@@ -27,7 +29,7 @@ export type SupplyProfile = {
 };
 
 export type SupplyFormState = { error: string; attempted?: Record<string, string>; reset?: number };
-export type Values = Record<string, string | number>;
+export type Values = Record<string, string | number | CreatorValue>;
 type WorkState = "draft" | "submitted";
 type VersionSummary = { revision: number; state: WorkState; date: string };
 type WorkSummary = { id: string; title: string; updated_at: string; state: WorkState; revision: number };
@@ -76,8 +78,9 @@ export function integer(input: unknown, max: number, min = 1) {
   return value >= min && value <= max ? value : null;
 }
 
-export function displayValue(field: SupplyField, value: number | string | undefined) {
+export function displayValue(field: SupplyField, value: number | string | CreatorValue | undefined) {
   if (value === undefined) return "";
+  if (typeof value === "object") return describeCreatorValue(value);
   if (field.type === "money" && typeof value === "number") return (value / 100).toFixed(2);
   return String(value);
 }
