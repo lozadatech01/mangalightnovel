@@ -1,6 +1,6 @@
 "use server";
 
-import { decodeRights, parseRights } from "@/lib/portal/creator-intake";
+import { creatorTextLimit, decodeRights, parseRights, readRights } from "@/lib/portal/creator-intake";
 import { redirect } from "next/navigation";
 import { requireAdmin, requirePortal } from "@/lib/auth/authorization";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -38,8 +38,6 @@ export async function saveSupplyWork(state: SupplyFormState, form: FormData): Pr
   if (step === "rights" && attempted.creatorRights.length >= 16000) return failure("The contributor or rights holder list is too long.");
   const rights = step === "rights" ? decodeRights(attempted.creatorRights) : null;
   if (step === "rights" && !rights) return failure("Check the contributor and rights holder entries.");
-  const structured = rights ? parseRights(rights, intent === "submit") : { values: {} };
-  if (!structured.values) return failure(structured.error);
   if (!parsed.values) return failure(parsed.error);
   const db = createAdminClient();
   if (!db) return failure("Supplier work is temporarily unavailable.");
@@ -53,7 +51,10 @@ export async function saveSupplyWork(state: SupplyFormState, form: FormData): Pr
     if (!prior) return failure(failures.changed);
   }
   const title = step === "rights" ? prior?.title ?? "" : inputText(form.get("title"));
-  if (title.length < 2 || title.length > 160) return failure("Enter a title between 2 and 160 characters.");
+  const titleLimit = step && title !== prior?.title ? creatorTextLimit : 160;
+  if (title.length < 2 || title.length > titleLimit) return failure(`Enter a title between 2 and ${titleLimit} characters.`);
+  const structured = rights ? parseRights(rights, intent === "submit", prior ? readRights(prior.fields) : undefined) : { values: {} };
+  if (!structured.values) return failure(structured.error);
   const editedKeys = new Set(editedFields.map(field => field.key));
   const preserved = Object.entries(prior?.fields ?? {}).filter(([key, value]) =>
     !editedKeys.has(key) || (step === "rights" && key !== "claim_evidence" && typeof value === "string" && !Object.hasOwn(structured.values, key)));
