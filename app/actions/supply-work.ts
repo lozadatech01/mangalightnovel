@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin, requirePortal } from "@/lib/auth/authorization";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { profiles } from "@/lib/portal/supply-profiles";
-import { inputText, integer, optionalId, parseFields, type SupplyFormState } from "@/lib/portal/supply-model";
+import { inputText, integer, optionalId, parseFields, supplyFieldsForStep, type SupplyDetail, type SupplyFormState } from "@/lib/portal/supply-model";
 
 const failures: Record<string, string> = {
   invalid: "Check the fields, including the dates and quantities.",
@@ -21,26 +21,47 @@ export async function saveSupplyWork(state: SupplyFormState, form: FormData): Pr
   const { user, account } = await requirePortal();
   const profile = profiles[account.account_type];
   if (!profile) redirect("/portal");
-  const attempted = Object.fromEntries(["title", ...profile.fields.map(field => field.key)].map(key => [key, inputText(form.get(key)).slice(0, 2000)]));
+  const step = account.account_type === "creator" ? form.get("titleStep") === "rights" ? "rights" : "details" : undefined;
+  const editedFields = supplyFieldsForStep(profile.fields, step);
+  const attempted = Object.fromEntries(["title", ...editedFields.map(field => field.key)].map(key => [key, inputText(form.get(key)).slice(0, 2000)]));
   const failure = (error: string) => ({ error, attempted, reset: (state.reset ?? 0) + 1 });
   const target = optionalId(form.get("item"));
   const expected = integer(form.get("expected"), 2147483646, 0);
   const intent = inputText(form.get("intent"));
   const invitation = optionalId(form.get("invitation"));
-  const title = inputText(form.get("title"));
-  if (!target || expected === null || !["draft", "submit"].includes(intent) || title.length < 2 || title.length > 160) {
-    return failure("Enter a title between 2 and 160 characters.");
-  }
-  const parsed = parseFields(profile, form, intent === "submit");
+  if (!target || expected === null || !["draft", "submit"].includes(intent)) return failure(failures.invalid);
+  if (step === "details" && intent === "submit") return failure("Open Rights for review to submit this title.");
+  if (step === "rights" && expected === 0) return failure("Save the title details first.");
+  const parsed = parseFields(editedFields, form, intent === "submit");
   if (!parsed.values) return failure(parsed.error);
   const db = createAdminClient();
   if (!db) return failure("Supplier work is temporarily unavailable.");
+  let prior: SupplyDetail | null = null;
+  if (step && expected > 0) {
+    const { data, error } = await db.rpc("supplier_work_read", {
+      p_actor: user.id, p_item: target, p_version: expected, p_page: 1,
+    });
+    if (error) return failure("The title could not be opened. Try again.");
+    prior = data?.selected ?? null;
+    if (!prior) return failure(failures.changed);
+  }
+  const title = step === "rights" ? prior?.title ?? "" : inputText(form.get("title"));
+  if (title.length < 2 || title.length > 160) return failure("Enter a title between 2 and 160 characters.");
+  const editedKeys = new Set(editedFields.map(field => field.key));
+  const values = {
+    ...Object.fromEntries(Object.entries(prior?.fields ?? {}).filter(([key]) => !editedKeys.has(key))),
+    ...parsed.values,
+  };
+  if (step === "rights" && intent === "submit" && profile.fields.some(field => field.required && values[field.key] === undefined)) {
+    return failure("Finish the title details before submitting for review.");
+  }
   const { data, error } = await db.rpc("supplier_work_save", {
     p_actor: user.id, p_item: target, p_expected: expected, p_intent: intent, p_title: title,
-    p_fields: parsed.values, p_invitation: invitation,
+    p_fields: values, p_invitation: invitation,
   });
   if (error || data !== "saved") return failure(failures[data] ?? "The record could not be saved. Try again.");
-  redirect(`/portal/supply?item=${target}&notice=${intent}`);
+  const nextStep = step && intent === "draft" ? "&section=rights" : "";
+  redirect(`/portal/supply?item=${target}&notice=${intent}${nextStep}`);
 }
 
 export async function qualifySupply(form: FormData) {

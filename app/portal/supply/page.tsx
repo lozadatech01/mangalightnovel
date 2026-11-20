@@ -5,7 +5,7 @@ import SupplierPanelHeader from "@/app/components/supplier-panel-header";
 import SupplyForm from "@/app/components/supply-work-form";
 import { requirePortal } from "@/lib/auth/authorization";
 import { departmentId, supplierWorkPanelName } from "@/lib/portal/config";
-import { displayValue, formatReceiptDate, integer, optionalId, supplyLabel, type SupplyRead } from "@/lib/portal/supply-model";
+import { displayValue, formatReceiptDate, integer, optionalId, supplyFieldsForStep, supplyLabel, type SupplyRead } from "@/lib/portal/supply-model";
 import { profiles } from "@/lib/portal/supply-profiles";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -33,8 +33,14 @@ export default async function SupplierWorkPage({ searchParams }: { searchParams:
   const item = work?.selected ?? null;
   const invitation = work?.invitations.find(entry => entry.id === requestedInvite);
   const start = params.start === "yes" && work?.hasApplication && (!profile.invited || invitation);
-  const canSubmit = account.account_type === "creator" || Boolean(work?.qualified);
+  const creator = account.account_type === "creator";
+  const canSubmit = creator || Boolean(work?.qualified);
+  const titleStep = creator ? params.section === "rights" ? "rights" : "details" : undefined;
   const editable = work?.hasApplication && item?.writable && item.revision === item.head;
+  const editorUrl = `${panel}?item=${item?.id}&revise=yes`;
+  const editionSummary = item && titleStep === "rights" ? supplyFieldsForStep(profile.fields, "details")
+    .map(field => field.choices?.[String(item.fields[field.key])] ?? displayValue(field, item.fields[field.key]))
+    .filter(Boolean).join(" · ") : null;
   const notice = params.notice === "draft" ? "Draft saved." : params.notice === "submit" ? profile.receipt + "." : null;
 
   return (
@@ -63,8 +69,18 @@ export default async function SupplierWorkPage({ searchParams }: { searchParams:
             {item.feedback ? <p className="sr-alert sp-statement"><strong>Clarification requested.</strong> {item.feedback}</p> : null}
             {editable && (item.state === "draft" || params.revise === "yes") ? <>
               {item.state === "submitted" ? <p>Save a new version. The submitted version stays in the department’s review history.</p> : null}
-              <SupplyForm key={item.id + "/" + item.revision} profile={profile} item={item.id} invitation={item.invitation}
-                revision={item.head} title={item.title} values={item.fields} canSubmit={canSubmit} />
+              {titleStep ? <>
+                <nav className="sp-nav sp-subnav mt-4" aria-label="Title setup">
+                  <Link href={editorUrl} aria-current={titleStep === "details" ? "page" : undefined}>Title details</Link>
+                  <Link href={editorUrl + "&section=rights"} aria-current={titleStep === "rights" ? "page" : undefined}>Rights for review</Link>
+                </nav>
+                {titleStep === "rights" ? <>
+                  {editionSummary ? <p className="sr-note">{editionSummary}</p> : null}
+                  <p>Tell the department who worked on this title and who can give permission to publish it.</p>
+                </> : <p>Save the title details to continue to rights for review.</p>}
+              </> : null}
+              <SupplyForm key={item.id + "/" + item.revision + "/" + titleStep} profile={profile} item={item.id} invitation={item.invitation}
+                revision={item.head} title={item.title} values={item.fields} canSubmit={canSubmit} titleStep={titleStep} />
             </> : <>
               <dl className="sr-facts">{profile.fields.flatMap(field => item.fields[field.key] === undefined ? [] : [
                 <div key={field.key}><dt>{field.label}</dt><dd className="sp-statement">{field.choices?.[String(item.fields[field.key])] ?? displayValue(field, item.fields[field.key])}</dd></div>,
@@ -85,8 +101,10 @@ export default async function SupplierWorkPage({ searchParams }: { searchParams:
             <Link className="sr-link" href={panel}>Back to {profile.primary.toLowerCase()}</Link>
             <h2 className="mt-3">New {profile.singular}</h2>
             {invitation ? <><p>{invitation.title} · Brief version {invitation.revision}</p><p className="sp-statement">{invitation.scope}</p></> : null}
-            <p className="sr-note">Use approved evidence references in these fields. Keep protected files and personal details in their authorized source.</p>
-            <SupplyForm profile={profile} item={randomUUID()} invitation={invitation?.id ?? null} revision={0} title="" values={{}} canSubmit={canSubmit} />
+            <p className="sr-note">{creator ? "Start with the basics. Saving creates a private draft."
+              : "Use approved evidence references in these fields. Keep protected files and personal details in their authorized source."}</p>
+            <SupplyForm profile={profile} item={randomUUID()} invitation={invitation?.id ?? null} revision={0} title="" values={{}}
+              canSubmit={canSubmit} titleStep={creator ? "details" : undefined} />
           </section> : <section className="sr-card">
             <h2>{profile.primary}</h2>
             {!profile.invited && work.hasApplication ? <Link className="sr-link" href={panel + "?start=yes"}>New {profile.singular}</Link> : null}

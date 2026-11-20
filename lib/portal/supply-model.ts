@@ -5,7 +5,16 @@ export type SupplyField = {
   required: boolean;
   maxLength?: number;
   choices?: Record<string, string>;
+  help?: string;
 };
+
+export type CreatorTitleStep = "details" | "rights";
+
+const titleDetailKeys = new Set(["content_kind", "language", "format"]);
+
+export function supplyFieldsForStep(fields: SupplyField[], step?: CreatorTitleStep) {
+  return step ? fields.filter(field => titleDetailKeys.has(field.key) === (step === "details")) : fields;
+}
 
 export type SupplyProfile = {
   primary: string;
@@ -73,12 +82,12 @@ export function displayValue(field: SupplyField, value: number | string | undefi
   return String(value);
 }
 
-export function parseFields(profile: SupplyProfile, form: FormData, submit: boolean) {
+export function parseFields(fields: SupplyField[], form: FormData, submit: boolean) {
   const values: Values = {};
-  for (const field of profile.fields) {
+  for (const field of fields) {
     const raw = inputText(form.get(field.key));
     if (!raw) {
-      if (submit && field.required) return { error: `Enter ${field.label.toLowerCase()}.` };
+      if (submit && field.required) return { error: `Complete “${field.label}” before submitting.` };
       continue;
     }
     if (field.type === "money") {
