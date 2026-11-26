@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Form from "next/form";
 import SubmitButton from "@/app/admin/components/submit-button";
+import styles from "./title-engagement.module.css";
 import EngagementAxes from "./engagement-axes";
 import EngagementContentFilters from "./engagement-content-filters";
 import {
@@ -76,82 +77,96 @@ export default function TitleEngagementCube({ view, window, report, catalog, now
     <section id="engagement-cube" className="sr-shell ac-inline" aria-labelledby="engagement-heading">
       <div className="sr-card ac-panel">
         <h2 id="engagement-heading">Title Engagement</h2>
-        <p>Choose the rows, columns and measure. Use the table links to drill into a period, publisher or title.</p>
-        <Form action="/admin/analytics#engagement-cube" className="ac-form" key={engagementUrl(view)}>
-          <input type="hidden" name="report" value="title-engagement" />
-          <input type="hidden" name="layout" value="yes" />
-          <div className="ac-fields">
-            <EngagementAxes view={view} />
-            <label>Measure
-              <select name="measure" defaultValue={view.measure}>
-                {Object.entries(measureLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-              </select>
-            </label>
-            <label>From month<input type="month" name="fromMonth" defaultValue={from} max={latestMonth} required /></label>
-            <label>To month<input type="month" name="toMonth" defaultValue={to} max={latestMonth} required /></label>
-            <EngagementContentFilters catalog={catalog} view={view} />
+        <div className={styles.workspace}>
+          <Form action="/admin/analytics#engagement-cube" className={styles.settings} key={engagementUrl(view)} noValidate>
+            <input type="hidden" name="report" value="title-engagement" />
+            <input type="hidden" name="layout" value="yes" />
+            <fieldset className={styles.layout}>
+              <legend>Table setup</legend>
+              <EngagementAxes view={view} />
+              <label>Reading measure
+                <select name="measure" defaultValue={view.measure}>
+                  {Object.entries(measureLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </label>
+              <label className={styles.totals}><input type="checkbox" name="totals" value="yes" defaultChecked={view.showTotals} /> Include table totals</label>
+            </fieldset>
+            <details className={styles.filters} open={Boolean(view.rangeError || view.publisherScope || view.work || view.kind)}>
+              <summary>Filter reading activity</summary>
+              <div className={styles.filterFields}>
+                <label>First month<input type="month" name="fromMonth" defaultValue={from} max={latestMonth} required /></label>
+                <label>Last month<input type="month" name="toMonth" defaultValue={to} max={latestMonth} required /></label>
+                <p className="sr-note">Up to 12 months, Manila time.</p>
+                <EngagementContentFilters catalog={catalog} view={view} />
+              </div>
+            </details>
+            <SubmitButton label="Apply view" pendingLabel="Updating activity…" />
+          </Form>
+          <div className={styles.results}>
+            <header className={styles.resultHeader}>
+              <div>
+                <h3>{measureLabels[view.measure]}</h3>
+                <p>{windowLabel}</p>
+              </div>
+              {!view.rangeError ? <nav className={styles.drill} aria-label="Reading table controls">
+                {up ? <Link href={up} prefetch={false}>Broader dates</Link> : null}
+                {down ? <Link href={down} prefetch={false}>Finer dates</Link> : null}
+                <Link href={engagementUrl({ ...view, pivot: !view.pivot })} prefetch={false}>Swap axes</Link>
+              </nav> : null}
+            </header>
+            {view.breakdown !== "publisher" || view.publisherScope || view.work ? <nav className="ac-drills" aria-label="Content hierarchy">
+              <Link href={publishers} className="sr-link" prefetch={false}>All publishers</Link>
+              {view.publisherScope ? <><span aria-hidden="true">›</span>{view.work
+                ? <Link href={titles} className="sr-link" prefetch={false}>{publisherLabel ?? "Publisher"}</Link>
+                : <span aria-current="location">{publisherLabel ?? "Publisher"}</span>}</> : null}
+              {view.work && !view.publisherScope ? <><span aria-hidden="true">›</span>
+                <Link href={titles} className="sr-link" prefetch={false}>All titles</Link></> : null}
+              {view.work ? <><span aria-hidden="true">›</span><span aria-current="location">{titleLabel ?? "Title"}</span></> : null}
+            </nav> : null}
+            {catalog === null ? <p className="sr-alert">The publisher and title catalog could not be loaded.</p> : null}
+            {view.rangeError ? <p className="sr-alert" role="alert">{view.rangeError}</p> : catalogEmpty ? <p className="sr-alert">No approved titles have been loaded into Analytics. Reading results are unavailable.</p>
+              : needsTitle ? <p className="sr-alert">Select a title in the filters to see its chapters.</p>
+              : !sourceAvailable ? <p className="sr-alert">The report source is unavailable.</p>
+              : !hasAvailablePeriod ? <p className="sr-alert">Data unavailable. No displayed period has full verified coverage.{view.level !== "month" ? " Choose month on the date axis to check individual months." : ""}</p>
+              : !total?.available ? <p className="sr-alert">Verified data covers {availablePeriods} of {dates.length} displayed periods. Totals require coverage for the full selection.</p> : null}
+            {!view.rangeError ? <>
+            <div className="sa-table-wrap" tabIndex={0} role="region" aria-label="Title Engagement results">
+              <table className="sa-table ac-table" aria-label={measureLabels[view.measure]}>
+                <thead><tr>
+                  <th scope="col">{view.pivot ? "Start period" : breakdownLabels[view.breakdown]}</th>
+                  {columns.map(column => <th scope="col" key={column.id}>{column.href
+                    ? <Link href={column.href} className="sr-link" prefetch={false}>{column.label}</Link> : column.label}</th>)}
+                  {view.showTotals ? <th scope="col">Total</th> : null}
+                </tr></thead>
+                <tbody>{rows.map(row => <tr key={row.id}>
+                  <th scope="row">{row.href ? <Link href={row.href} className="sr-link" prefetch={false}>{row.label}</Link> : row.label}</th>
+                  {columns.map(column => <td key={column.id}>{renderValue(row.id, column.id)}</td>)}
+                  {view.showTotals ? <td>{renderValue(row.id, null)}</td> : null}
+                </tr>)}</tbody>
+                {view.showTotals ? <tfoot><tr>
+                  <th scope="row">Total</th>
+                  {columns.map(column => <td key={column.id}>{renderValue(null, column.id)}</td>)}
+                  <td>{renderValue(null, null)}</td>
+                </tr></tfoot> : null}
+              </table>
+            </div>
+            <dl className={styles.readingTotals} aria-label="Totals for the filtered selection">
+              {(["starts", "completions", "readers", "rate"] as const).map(measure => <div key={measure}>
+                <dt>{measureLabels[measure]}</dt><dd>{formatValue(grand, measure)}</dd>
+              </div>)}
+            </dl>
+            {pageCount > 1 || view.page > 1 ? <nav className="ac-drills" aria-label="Breakdown pages">
+              {view.page > 1 ? <Link className="ac-control" href={engagementUrl({ ...view, page: view.page - 1 })}>Previous</Link> : null}
+              <span>Page {view.page} of {pageCount} · Totals cover all pages</span>
+              {view.page < pageCount ? <Link className="ac-control" href={engagementUrl({ ...view, page: view.page + 1 })}>Next</Link> : null}
+            </nav> : null}
+            <p className="sr-note">Completions stay with the month the read started. Distinct-reader subtotals require retained evidence. A dash means unavailable, or not applicable for a completion rate with zero starts.</p>
+            {window.to.slice(0, 7) > latestMonth
+              ? <p className="sr-note">The current month covers eligible activity through the verified source cutoff.</p> : null}
+            {total?.available && total.oldest_cutoff ? <p className="sr-note">Oldest source cutoff in this selection · {cutoffLabel.format(new Date(total.oldest_cutoff))} PHT</p> : null}
+            </> : null}
           </div>
-          <p className="sr-note">Dates use Manila time. Select up to 12 months.</p>
-          <label className="ac-total-toggle"><input type="checkbox" name="totals" value="yes" defaultChecked={view.showTotals} /> Show grand totals</label>
-          <div className="ac-report-actions"><SubmitButton label="Apply controls" pendingLabel="Updating report…" /></div>
-        </Form>
-        <div className="ac-drills" role="group" aria-label="Cube layout">
-          {up ? <Link className="ac-control" href={up} prefetch={false}>Roll up dates</Link> : null}
-          {down ? <Link className="ac-control" href={down} prefetch={false}>Drill down dates</Link> : null}
-          <Link className="ac-control" href={engagementUrl({ ...view, pivot: !view.pivot })} prefetch={false}>Pivot rows and columns</Link>
         </div>
-        {view.breakdown !== "publisher" || view.publisherScope || view.work ? <nav className="ac-drills" aria-label="Content hierarchy">
-          <Link href={publishers} className="sr-link" prefetch={false}>All publishers</Link>
-          {view.publisherScope ? <><span aria-hidden="true">›</span>{view.work
-            ? <Link href={titles} className="sr-link" prefetch={false}>{publisherLabel ?? "Publisher"}</Link>
-            : <span aria-current="location">{publisherLabel ?? "Publisher"}</span>}</> : null}
-          {view.work && !view.publisherScope ? <><span aria-hidden="true">›</span>
-            <Link href={titles} className="sr-link" prefetch={false}>All titles</Link></> : null}
-          {view.work ? <><span aria-hidden="true">›</span><span aria-current="location">{titleLabel ?? "Title"}</span></> : null}
-        </nav> : null}
-        <p className="sr-note"><strong>{measureLabels[view.measure]}</strong> · {windowLabel} · {view.pivot ? view.level + " × " + breakdownLabels[view.breakdown].toLowerCase() : breakdownLabels[view.breakdown] + " × " + view.level}</p>
-        {catalog === null ? <p className="sr-alert">The publisher and title catalog could not be loaded.</p> : null}
-        {view.rangeError ? <p className="sr-alert" role="alert">{view.rangeError}</p> : catalogEmpty ? <p className="sr-alert">No approved titles have been loaded into Analytics. Reading results are unavailable.</p>
-          : needsTitle ? <p className="sr-alert">Select a title and apply filters to see its chapters.</p>
-          : !sourceAvailable ? <p className="sr-alert">The report source is unavailable.</p>
-          : !hasAvailablePeriod ? <p className="sr-alert">Data unavailable. No displayed period has full verified coverage.{view.level !== "month" ? " Group dates by month to check individual months." : ""}</p>
-          : !total?.available ? <p className="sr-alert">Verified data covers {availablePeriods} of {dates.length} displayed periods. Totals require coverage for the full selection.</p> : null}
-        {!view.rangeError ? <>
-        <dl className="ac-summary" aria-label="Totals for the filtered selection">
-          {(["starts", "completions", "readers", "rate"] as const).map(measure => <div key={measure}>
-            <dt>{measureLabels[measure]}</dt><dd>{formatValue(grand, measure)}</dd>
-          </div>)}
-        </dl>
-        <div className="sa-table-wrap" tabIndex={0} role="region" aria-label="Title Engagement results">
-          <table className="sa-table ac-table" aria-label={measureLabels[view.measure]}>
-            <thead><tr>
-              <th scope="col">{view.pivot ? "Start period" : breakdownLabels[view.breakdown]}</th>
-              {columns.map(column => <th scope="col" key={column.id}>{column.href
-                ? <Link href={column.href} className="sr-link" prefetch={false}>{column.label}</Link> : column.label}</th>)}
-              {view.showTotals ? <th scope="col">Total</th> : null}
-            </tr></thead>
-            <tbody>{rows.map(row => <tr key={row.id}>
-              <th scope="row">{row.href ? <Link href={row.href} className="sr-link" prefetch={false}>{row.label}</Link> : row.label}</th>
-              {columns.map(column => <td key={column.id}>{renderValue(row.id, column.id)}</td>)}
-              {view.showTotals ? <td>{renderValue(row.id, null)}</td> : null}
-            </tr>)}</tbody>
-            {view.showTotals ? <tfoot><tr>
-              <th scope="row">Total</th>
-              {columns.map(column => <td key={column.id}>{renderValue(null, column.id)}</td>)}
-              <td>{renderValue(null, null)}</td>
-            </tr></tfoot> : null}
-          </table>
-        </div>
-        {pageCount > 1 || view.page > 1 ? <nav className="ac-drills" aria-label="Breakdown pages">
-          {view.page > 1 ? <Link className="ac-control" href={engagementUrl({ ...view, page: view.page - 1 })}>Previous</Link> : null}
-          <span>Page {view.page} of {pageCount} · Totals cover all pages</span>
-          {view.page < pageCount ? <Link className="ac-control" href={engagementUrl({ ...view, page: view.page + 1 })}>Next</Link> : null}
-        </nav> : null}
-        <p className="sr-note">Completions stay with the month the read started. Distinct-reader subtotals require retained evidence. A dash means unavailable, or not applicable for a completion rate with zero starts.</p>
-        {window.to.slice(0, 7) > latestMonth
-          ? <p className="sr-note">The current month covers eligible activity through the verified source cutoff.</p> : null}
-        {total?.available && total.oldest_cutoff ? <p className="sr-note">Oldest source cutoff in this selection · {cutoffLabel.format(new Date(total.oldest_cutoff))} PHT</p> : null}
-        </> : null}
       </div>
     </section>
   );
