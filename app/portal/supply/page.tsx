@@ -1,3 +1,4 @@
+import ChapterForms from "./chapters/forms";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -66,6 +67,8 @@ export default async function SupplierWorkPage({ searchParams }: { searchParams:
             <Link className="sr-link" href={panel}>Back to {profile.primary.toLowerCase()}</Link>
             <h2 className="mt-3">{item.title}</h2>
             <p className="sr-note">{supplyLabel(item.state)} · Version {item.revision}</p>
+            {params.asset==="saved" ? <p role="status">Page received.</p> : params.asset==="invalid" ? <p role="alert">Page could not be saved. Check the file and selected page.</p> : null}
+            {item.state==="submitted" && item.head===item.revision ? <ChapterForms reader={user.id} item={item.id}/> : null}
             {item.feedback ? <p className="sr-alert sp-statement"><strong>Clarification requested.</strong> {item.feedback}</p> : null}
             {editable && (item.state === "draft" || params.revise === "yes") ? <>
               {item.state === "submitted" ? <p>Save a new version. The submitted version stays in the department’s review history.</p> : null}
