@@ -46,8 +46,8 @@ export default async function CustomerCatalog({ id, displayName, query, page }: 
         : !items.length ? <p role="status">{current > 1 ? "There are no more results." : search ? "No matching results." : catalogConfig.empty}</p> : null}
       <ul className="sr-list">{items.map(entry => <li key={entry.id} className="sr-list-item">
         <div><strong>{entry.title}</strong><small>{entry.label}{entry.price !== undefined ? " · " + pesos.format(entry.price/100) : ""}</small></div>
+        <Link href={`/portal/read/${entry.id}`}>Read chapter</Link>
       </li>)}</ul>
-      <p className="sr-note">{catalogConfig.action}</p>
       {data && (current > 1 || canAdvance) ? <nav className="sr-pages" aria-label="Catalog pages">
         {current > 1 ? <Link href={pageHref(current - 1)}>Previous</Link> : null}
         <span>Page {current}</span>

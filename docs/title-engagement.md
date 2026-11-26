@@ -28,4 +28,16 @@ Open a publisher or title heading to drill into its content. Open a year or quar
 4. An approved empty manifest permits a zero. Historical periods require full month coverage. The current month is as of the verified cutoff. Empty or incomplete sources display Unavailable. The department admin app requests aggregate cells through a server-side service-role RPC.
 5. Before enabling ingestion, schedule the owner-only `expire_reading_attempts` function under `ACTIVITY_90`, document holds in the source system, and establish the `REPORTS_24M` aggregate and manifest review from the end of the source period. Report queries already exclude expired raw rows. A complete raw replacement is rejected if it would restore expired evidence. Older corrections require approved, surviving evidence and a separate correction path. [V1.0 privacy and retention rules](https://github.com/hilocarloarmenion03/loxadaentertainmentscompany/blob/main/knowledge/specification/v1.0.md#L34560)
 
-The current Manga database supplies account and supplier workflow data. The verified release, reading capture and scheduled loader are prerequisites for live values. The cube currently ships without seed records.
+The cube requires verified release and delivery evidence for live values.
+
+### Scheduled local delivery loads
+
+The database refreshes eligible local delivery months every six hours. The warehouse owner registers each verified Manila start month and its coverage evidence in `manga_analytics.reading_source_coverage`. Register a month only when capture covered the period from its first day, including verifiable inactivity before launch. Unregistered months stay unavailable. Set `enabled = false` to pause future loads. No coverage approvals are seeded.
+
+The job builds a stable, ordered snapshot of the same-release delivery attempts and reconciles its count through the transactional month loader. Late completions update their original start month. A previously loaded external source requires operator reconciliation before takeover. Once the first day is outside the 90-day raw window, historical corrections require separate review using surviving authorized evidence. Daily expiry removes expired raw mart rows. Monitor both named jobs in `cron.job_run_details`.
+
+### Publishing chapter pages
+
+The trusted release handoff uses the exact release ID as the catalog source key. In one transaction, create the verified work, edition, chapter and release dimensions, the authorized catalog listing, and its ordered chapter_pages records. Page numbers run from one through the common page count. Use plain text for a light novel page or a private reading-pages bucket object key for a Manga image (PNG, JPEG, WebP, up to 8 MiB). Treat published page content and objects as immutable and mint a fresh release version for corrections. Set withdrawn_at on a listing to stop delivery. Register known test or internal reader IDs in customer_catalog.excluded_readers before use. Record a documented source hold in retain_until when applicable.
+
+A signed-in reader opens a released chapter from the catalog. The reader loads one page at a time. The server issues a signed page receipt bound to the account, attempt, exact release and page. Acknowledgement after delivery records one start. Finishing the final page records at most one completion after all preceding pages were acknowledged.
