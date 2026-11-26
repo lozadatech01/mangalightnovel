@@ -28,10 +28,10 @@ export default function EngagementAxes({ view }: { view: EngagementView }) {
   }
 
   return <>
-    <label>Rows<select name="rows" value={rows} onChange={event => choose(event.target.value, "rows")}>
+    <label>List by<select name="rows" value={rows} onChange={event => choose(event.target.value, "rows")}>
       {axes.map(axis => <option key={axis.value} value={axis.value}>{axis.label}</option>)}
     </select></label>
-    <label>Columns<select name="columns" value={columns} onChange={event => choose(event.target.value, "columns")}>
+    <label>Compare across<select name="columns" value={columns} onChange={event => choose(event.target.value, "columns")}>
       {axes.map(axis => <option key={axis.value} value={axis.value}>{axis.label}</option>)}
     </select></label>
   </>;

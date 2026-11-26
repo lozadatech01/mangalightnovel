@@ -2,9 +2,9 @@
 
 Open **Analytics → Title Engagement** in the department admin workspace. The cube answers which titles, content types and verified publishers had eligible reading in a period. It uses the Asia/Manila start date and the `SIGNED_IN_ELIGIBLE_V1` cohort. [V1.0 report contract](https://github.com/hilocarloarmenion03/loxadaentertainmentscompany/blob/main/knowledge/specification/v1.0.md#L34168)
 
-Choose **Rows**, **Columns**, and **Measure**, then set the inclusive Manila month range. The cube supports one date axis and one content axis, with up to 12 months per selection. Choose a publisher or title to filter the results and select **Apply controls**. The summary uses the same verified totals as the table. **Show grand totals** controls the table margins.
+In **Table setup**, choose **List by**, **Compare across**, and **Reading measure**. Under **Filter reading activity**, set the inclusive Manila month range. The cube supports one date axis and one content axis, with up to 12 months per selection. Choose a publisher or title to filter the results and select **Apply view**. The summary uses the same verified totals as the table. **Include table totals** controls the table margins.
 
-Open a publisher or title heading to drill into its content. Open a year or quarter to drill into that period. The date toolbar rolls up or drills across the selected range, and Pivot swaps the axes. Reading starts count eligible chapter attempts after authorized delivery.
+Open a publisher or title heading to drill into its content. Open a year or quarter to drill into that period. The date toolbar rolls up or drills across the selected range, and **Swap axes** transposes the table. Reading starts count eligible chapter attempts after authorized delivery.
 
 | Measure | Calculation |
 | --- | --- |
