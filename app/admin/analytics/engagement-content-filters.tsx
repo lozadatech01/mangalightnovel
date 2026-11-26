@@ -16,14 +16,6 @@ export default function EngagementContentFilters({ catalog, view }: {
 
   return (
     <>
-      <label>Content level
-        <select name="breakdown" defaultValue={view.breakdown}>
-          <option value="publisher">Publishers</option>
-          <option value="title">Titles</option>
-          <option value="chapter">Chapters</option>
-          {view.breakdown === "kind" ? <option value="kind">Content types</option> : null}
-        </select>
-      </label>
       <label>Publisher
         <select name="publisherScope" value={publisher} disabled={!catalog?.publishers.length}
           onChange={event => setPublisher(event.target.value)}>
