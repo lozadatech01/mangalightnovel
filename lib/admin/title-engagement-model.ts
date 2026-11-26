@@ -26,6 +26,11 @@ export type EngagementView = {
   work: string | null;
   measure: Measure;
   pivot: boolean;
+  fromMonth: string;
+  toMonth: string;
+  focus: string | null;
+  rangeError: string | null;
+  showTotals: boolean;
   page: number;
 };
 export type DateWindow = { from: string; to: string; months: number };
@@ -70,17 +75,30 @@ export function engagementView(params: CubeParams, now: Date): EngagementView {
   const publisherScope = scope === "unattributed" || /^publisher:[\s\S]{1,160}$/.test(scope) ? scope : null;
   const workId = scalar(params.work);
   const work = workId.length > 0 && workId.length <= 160 ? workId : null;
-  const level = choice(timeLevels, params.groupDates, "year");
+  const row = scalar(params.rows);
+  const column = scalar(params.columns);
+  const axes = row.startsWith("time:") && column.startsWith("content:") || row.startsWith("content:") && column.startsWith("time:");
+  const pivot = axes ? row.startsWith("time:") : params.pivot === "yes";
+  const level = choice(timeLevels, axes ? (pivot ? row : column).slice(5) : params.groupDates, "year");
   const quarter = integer(params.quarter, 1, year === currentYear ? Math.ceil(currentMonth / 3) : 4, 0);
+  const fromMonth = scalar(params.fromMonth);
+  const toMonth = scalar(params.toMonth);
+  const latest = manilaMonth(now);
+  const rangeError = (params.fromMonth !== undefined || params.toMonth !== undefined) &&
+    (!validMonth(fromMonth) || !validMonth(toMonth) || fromMonth > toMonth || toMonth > latest || monthIndex(toMonth) - monthIndex(fromMonth) >= 12)
+    ? "Choose a range of up to 12 months, ending no later than the current month." : null;
+  const focus = scalar(params.focus);
+  const validFocus = validMonth(focus) && (level === "quarter" && focus.endsWith("-01") || level === "month" && (Number(focus.slice(5)) - 1) % 3 === 0);
   return {
     year, month: month || null, quarter: !month && level === "month" ? quarter || null : null,
     kind: Object.hasOwn(kindLabels, kind) ? kind as Kind : null,
     level,
-    breakdown: choice(Object.keys(breakdownLabels) as Breakdown[], params.breakdown,
+    breakdown: choice(Object.keys(breakdownLabels) as Breakdown[], axes ? (pivot ? column : row).slice(8) : params.breakdown,
       work ? "chapter" : publisherScope ? "title" : "publisher"),
     measure: choice(Object.keys(measureLabels) as Measure[], params.measure, "starts"),
     publisherScope, work,
-    pivot: params.pivot === "yes",
+    pivot, fromMonth, toMonth, focus: validFocus ? focus : null, rangeError,
+    showTotals: params.layout === "yes" ? params.totals === "yes" : params.totals !== "no",
     page: integer(params.page, 1, 100000, 1),
   };
 }
@@ -89,7 +107,36 @@ function dateKey(year: number, month: number) {
   return String(year + Math.floor((month - 1) / 12)) + "-" + String((month - 1) % 12 + 1).padStart(2, "0") + "-01";
 }
 
+function validMonth(value: string) {
+  return /^(19\d{2}|[2-9]\d{3})-(0[1-9]|1[0-2])$/.test(value);
+}
+
+function monthIndex(value: string) {
+  return Number(value.slice(0, 4)) * 12 + Number(value.slice(5, 7)) - 1;
+}
+
+function dateOfMonth(index: number) {
+  return dateKey(Math.floor(index / 12), index % 12 + 1);
+}
+
+export function engagementBaseWindow(view: EngagementView, now: Date): DateWindow {
+  return engagementWindow({ ...view, focus: null }, now);
+}
+
 export function engagementWindow(view: EngagementView, now: Date): DateWindow {
+  if (view.fromMonth && view.toMonth && !view.rangeError) {
+    let first = monthIndex(view.fromMonth);
+    let last = monthIndex(view.toMonth);
+    if (view.focus) {
+      const focalStart = monthIndex(view.focus);
+      const focalEnd = focalStart + (view.level === "quarter" ? 11 : 2);
+      if (focalStart <= last && focalEnd >= first) {
+        first = Math.max(first, focalStart);
+        last = Math.min(last, focalEnd);
+      }
+    }
+    return { from: dateOfMonth(first), to: dateOfMonth(last + 1), months: last - first + 1 };
+  }
   const [year, month] = manilaMonth(now).split("-").map(Number);
   const start = view.month ?? (view.quarter ? (view.quarter - 1) * 3 + 1 : 1);
   const endOfYear = view.year === year ? month : 12;
@@ -108,16 +155,26 @@ export function engagementUrl(view: EngagementView) {
   if (view.publisherScope) fields.set("publisherScope", view.publisherScope);
   if (view.work) fields.set("work", view.work);
   if (view.pivot) fields.set("pivot", "yes");
+  if (view.fromMonth || view.toMonth || view.rangeError) {
+    fields.set("fromMonth", view.fromMonth);
+    fields.set("toMonth", view.toMonth);
+  }
+  if (view.focus) fields.set("focus", view.focus);
+  if (!view.showTotals) fields.set("totals", "no");
   if (view.page > 1) fields.set("page", String(view.page));
   return "/admin/analytics?" + fields + "#engagement-cube";
 }
 
 export function engagementDrill(view: EngagementView, step: -1 | 1) {
   const next = timeLevels[timeLevels.indexOf(view.level) + step];
-  return next ? engagementUrl({ ...view, level: next, quarter: null }) : null;
+  const focus = step === -1 && next === "quarter" && view.focus ? view.focus.slice(0, 4) + "-01" : null;
+  return next ? engagementUrl({ ...view, level: next, quarter: null, focus }) : null;
 }
 
 export function engagementDateMember(view: EngagementView, date: string) {
+  if (view.fromMonth && view.level !== "month") {
+    return engagementUrl({ ...view, focus: date.slice(0, 7), level: view.level === "year" ? "quarter" : "month" });
+  }
   if (view.level === "year") return engagementDrill(view, 1);
   if (view.level === "month") return null;
   return engagementUrl({ ...view, level: "month", quarter: view.month ? null : Math.ceil(Number(date.slice(5, 7)) / 3) });
@@ -135,10 +192,10 @@ export function engagementContentMember(view: EngagementView, id: string) {
 
 export function unavailableEngagement(view: EngagementView, window: DateWindow): EngagementReport {
   const buckets = new Set<string>();
-  const first = Number(window.from.slice(5, 7));
+  const first = monthIndex(window.from);
   for (let month = first; month < first + window.months; month++) {
-    const start = view.level === "year" ? 1 : view.level === "quarter" ? Math.floor((month - 1) / 3) * 3 + 1 : month;
-    buckets.add(dateKey(view.year, start));
+    const start = view.level === "year" ? month - month % 12 : view.level === "quarter" ? month - month % 3 : month;
+    buckets.add(dateOfMonth(start));
   }
   const members = view.breakdown === "kind"
     ? Object.entries(kindLabels).filter(([kind]) => !view.kind || view.kind === kind)

@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { DateWindow, EngagementCatalog, EngagementReport, EngagementView } from "./title-engagement-model";
 
 async function loadReport(db: NonNullable<ReturnType<typeof createAdminClient>>, view: EngagementView, window: DateWindow): Promise<EngagementReport | null> {
+  if (view.rangeError) return null;
   if (view.breakdown === "chapter" && !view.work) return null;
   const { data, error } = await db.rpc("manga_title_engagement_hierarchy", {
     p_from: window.from, p_to: window.to, p_level: view.level, p_breakdown: view.breakdown,

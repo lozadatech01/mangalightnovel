@@ -1,15 +1,15 @@
 import Link from "next/link";
 import Form from "next/form";
 import SubmitButton from "@/app/admin/components/submit-button";
+import EngagementAxes from "./engagement-axes";
 import EngagementContentFilters from "./engagement-content-filters";
 import {
-  breakdownLabels, engagementContentMember, engagementDateMember, engagementDrill, engagementUrl, engagementValue, measureLabels, timeLevels,
+  breakdownLabels, engagementBaseWindow, engagementContentMember, engagementDateMember, engagementDrill, engagementUrl, engagementValue, measureLabels,
   type Cell, type DateWindow, type EngagementCatalog, type EngagementReport, type EngagementView,
 } from "@/lib/admin/title-engagement-model";
 import { manilaMonth } from "@/lib/admin/account-cube-model";
 
 const dateLabel = new Intl.DateTimeFormat("en-PH", { month: "short", year: "numeric", timeZone: "UTC" });
-const monthLabel = new Intl.DateTimeFormat("en-PH", { month: "long", timeZone: "UTC" });
 const cutoffLabel = new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Manila" });
 const countLabel = new Intl.NumberFormat("en-PH");
 const percentLabel = new Intl.NumberFormat("en-PH", { style: "percent", maximumFractionDigits: 1 });
@@ -29,8 +29,12 @@ export default function TitleEngagementCube({ view, window, report, catalog, now
   view: EngagementView; window: DateWindow; report: EngagementReport; catalog: EngagementCatalog | null;
   now: Date; sourceAvailable: boolean;
 }) {
-  const [currentYear, currentMonth] = manilaMonth(now).split("-").map(Number);
-  const years = [...new Set([currentYear, currentYear - 1, currentYear - 2, view.year])].sort((a, b) => b - a);
+  const latestMonth = manilaMonth(now);
+  const base = engagementBaseWindow(view, now);
+  const lastBase = new Date(base.to + "T00:00:00Z");
+  lastBase.setUTCDate(0);
+  const from = view.fromMonth || base.from.slice(0, 7);
+  const to = view.toMonth || lastBase.toISOString().slice(0, 7);
   const dates = report.buckets.filter(bucket => bucket.bucket !== null);
   const total = report.buckets.find(bucket => bucket.bucket === null);
   const contentHeaders = report.members.map(({ member_id, label }) => ({
@@ -42,6 +46,7 @@ export default function TitleEngagementCube({ view, window, report, catalog, now
   const rows = view.pivot ? dateHeaders : contentHeaders;
   const columns = view.pivot ? contentHeaders : dateHeaders;
   const cells = new Map(report.cells.map(cell => [JSON.stringify([cell.bucket, cell.memberId]), cell]));
+  const grand = cells.get(JSON.stringify([null, null]));
   const down = engagementDrill(view, 1);
   const up = engagementDrill(view, -1);
   const lastDate = new Date(window.to + "T00:00:00Z");
@@ -57,50 +62,41 @@ export default function TitleEngagementCube({ view, window, report, catalog, now
   const publisherLabel = catalog?.publishers.find(item => item.id === view.publisherScope)?.label ?? report.publisherLabel;
   const titleLabel = catalog?.titles.find(item => item.id === view.work)?.label ?? report.titleLabel;
 
+  function formatValue(cell: Cell | undefined, measure: EngagementView["measure"]) {
+    const value = engagementValue(cell, measure);
+    if (value === null) return <span aria-label={cell && measure === "rate" ? "Not applicable" : "Data unavailable"}>—</span>;
+    return measure === "rate" ? percentLabel.format(value) : countLabel.format(value);
+  }
+
   function renderValue(row: string | null, col: string | null) {
-    const cell: Cell | undefined = cells.get(JSON.stringify(view.pivot ? [row, col] : [col, row]));
-    const value = engagementValue(cell, view.measure);
-    if (value === null) return <span aria-label={cell && view.measure === "rate" ? "Not applicable" : "Data unavailable"}>—</span>;
-    return view.measure === "rate" ? percentLabel.format(value) : countLabel.format(value);
+    return formatValue(cells.get(JSON.stringify(view.pivot ? [row, col] : [col, row])), view.measure);
   }
 
   return (
     <section id="engagement-cube" className="sr-shell ac-inline" aria-labelledby="engagement-heading">
       <div className="sr-card ac-panel">
         <h2 id="engagement-heading">Title Engagement</h2>
-        <p>Choose a content level and filter by publisher or title. Use the table links to drill down. Dates use Manila time.</p>
+        <p>Choose the rows, columns and measure. Use the table links to drill into a period, publisher or title.</p>
         <Form action="/admin/analytics#engagement-cube" className="ac-form" key={engagementUrl(view)}>
           <input type="hidden" name="report" value="title-engagement" />
-          {view.quarter ? <input type="hidden" name="quarter" value={view.quarter} /> : null}
-          {view.pivot ? <input type="hidden" name="pivot" value="yes" /> : null}
+          <input type="hidden" name="layout" value="yes" />
           <div className="ac-fields">
-            <EngagementContentFilters catalog={catalog} view={view} />
-            <label>Start year
-              <select name="year" defaultValue={view.year}>{years.map(year => <option key={year}>{year}</option>)}</select>
-            </label>
-            <label>Start month
-              <select name="month" defaultValue={view.month ?? ""}>
-                <option value="">All months</option>
-                {Array.from({ length: 12 }, (_, index) => index + 1).map(month => (
-                  <option key={month} value={month}>{monthLabel.format(new Date(Date.UTC(2020, month - 1, 1)))}</option>
-                ))}
-              </select>
-            </label>
-            <label>Group dates by
-              <select name="groupDates" defaultValue={view.level}>
-                {timeLevels.map(level => <option key={level} value={level}>{level[0].toUpperCase() + level.slice(1)}</option>)}
-              </select>
-            </label>
+            <EngagementAxes view={view} />
             <label>Measure
               <select name="measure" defaultValue={view.measure}>
                 {Object.entries(measureLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
               </select>
             </label>
+            <label>From month<input type="month" name="fromMonth" defaultValue={from} max={latestMonth} required /></label>
+            <label>To month<input type="month" name="toMonth" defaultValue={to} max={latestMonth} required /></label>
+            <EngagementContentFilters catalog={catalog} view={view} />
           </div>
-          <div className="ac-report-actions"><SubmitButton label="Apply filters" pendingLabel="Updating report…" /></div>
+          <p className="sr-note">Dates use Manila time. Select up to 12 months.</p>
+          <label className="ac-total-toggle"><input type="checkbox" name="totals" value="yes" defaultChecked={view.showTotals} /> Show grand totals</label>
+          <div className="ac-report-actions"><SubmitButton label="Apply controls" pendingLabel="Updating report…" /></div>
         </Form>
         <div className="ac-drills" role="group" aria-label="Cube layout">
-          {up ? <Link className="ac-control" href={up} prefetch={false}>Drill up dates</Link> : null}
+          {up ? <Link className="ac-control" href={up} prefetch={false}>Roll up dates</Link> : null}
           {down ? <Link className="ac-control" href={down} prefetch={false}>Drill down dates</Link> : null}
           <Link className="ac-control" href={engagementUrl({ ...view, pivot: !view.pivot })} prefetch={false}>Pivot rows and columns</Link>
         </div>
@@ -113,31 +109,37 @@ export default function TitleEngagementCube({ view, window, report, catalog, now
             <Link href={titles} className="sr-link" prefetch={false}>All titles</Link></> : null}
           {view.work ? <><span aria-hidden="true">›</span><span aria-current="location">{titleLabel ?? "Title"}</span></> : null}
         </nav> : null}
-        <p className="sr-note"><strong>{measureLabels[view.measure]}</strong> · {windowLabel} · {view.level} × {breakdownLabels[view.breakdown].toLowerCase()}</p>
+        <p className="sr-note"><strong>{measureLabels[view.measure]}</strong> · {windowLabel} · {view.pivot ? view.level + " × " + breakdownLabels[view.breakdown].toLowerCase() : breakdownLabels[view.breakdown] + " × " + view.level}</p>
         {catalog === null ? <p className="sr-alert">The publisher and title catalog could not be loaded.</p> : null}
-        {catalogEmpty ? <p className="sr-alert">No approved titles have been loaded into Analytics. Reading results are unavailable.</p>
+        {view.rangeError ? <p className="sr-alert" role="alert">{view.rangeError}</p> : catalogEmpty ? <p className="sr-alert">No approved titles have been loaded into Analytics. Reading results are unavailable.</p>
           : needsTitle ? <p className="sr-alert">Select a title and apply filters to see its chapters.</p>
           : !sourceAvailable ? <p className="sr-alert">The report source is unavailable.</p>
           : !hasAvailablePeriod ? <p className="sr-alert">Data unavailable. No displayed period has full verified coverage.{view.level !== "month" ? " Group dates by month to check individual months." : ""}</p>
           : !total?.available ? <p className="sr-alert">Verified data covers {availablePeriods} of {dates.length} displayed periods. Totals require coverage for the full selection.</p> : null}
+        {!view.rangeError ? <>
+        <dl className="ac-summary" aria-label="Totals for the filtered selection">
+          {(["starts", "completions", "readers", "rate"] as const).map(measure => <div key={measure}>
+            <dt>{measureLabels[measure]}</dt><dd>{formatValue(grand, measure)}</dd>
+          </div>)}
+        </dl>
         <div className="sa-table-wrap" tabIndex={0} role="region" aria-label="Title Engagement results">
           <table className="sa-table ac-table" aria-label={measureLabels[view.measure]}>
             <thead><tr>
               <th scope="col">{view.pivot ? "Start period" : breakdownLabels[view.breakdown]}</th>
               {columns.map(column => <th scope="col" key={column.id}>{column.href
                 ? <Link href={column.href} className="sr-link" prefetch={false}>{column.label}</Link> : column.label}</th>)}
-              <th scope="col">Total</th>
+              {view.showTotals ? <th scope="col">Total</th> : null}
             </tr></thead>
             <tbody>{rows.map(row => <tr key={row.id}>
               <th scope="row">{row.href ? <Link href={row.href} className="sr-link" prefetch={false}>{row.label}</Link> : row.label}</th>
               {columns.map(column => <td key={column.id}>{renderValue(row.id, column.id)}</td>)}
-              <td>{renderValue(row.id, null)}</td>
+              {view.showTotals ? <td>{renderValue(row.id, null)}</td> : null}
             </tr>)}</tbody>
-            <tfoot><tr>
+            {view.showTotals ? <tfoot><tr>
               <th scope="row">Total</th>
               {columns.map(column => <td key={column.id}>{renderValue(null, column.id)}</td>)}
               <td>{renderValue(null, null)}</td>
-            </tr></tfoot>
+            </tr></tfoot> : null}
           </table>
         </div>
         {pageCount > 1 || view.page > 1 ? <nav className="ac-drills" aria-label="Breakdown pages">
@@ -146,9 +148,10 @@ export default function TitleEngagementCube({ view, window, report, catalog, now
           {view.page < pageCount ? <Link className="ac-control" href={engagementUrl({ ...view, page: view.page + 1 })}>Next</Link> : null}
         </nav> : null}
         <p className="sr-note">Completions stay with the month the read started. Distinct-reader subtotals require retained evidence. A dash means unavailable, or not applicable for a completion rate with zero starts.</p>
-        {view.year === currentYear && (view.month === null || view.month === currentMonth)
+        {window.to.slice(0, 7) > latestMonth
           ? <p className="sr-note">The current month covers eligible activity through the verified source cutoff.</p> : null}
         {total?.available && total.oldest_cutoff ? <p className="sr-note">Oldest source cutoff in this selection · {cutoffLabel.format(new Date(total.oldest_cutoff))} PHT</p> : null}
+        </> : null}
       </div>
     </section>
   );
